@@ -1,0 +1,29 @@
+# Database
+
+# certefication
+/src/certs/
+
+# IDE
+.idea/
+*.iml
+*.ipr
+*.iws
+workspace.xml
+
+# macOS
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Project files
+*.log
+*.sqlite
+.env
+../src/.env
+env
+EOF
+/docker-compose.yml
