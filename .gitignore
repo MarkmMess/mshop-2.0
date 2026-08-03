@@ -1,7 +1,8 @@
 # Database
 
 # certefication
-/src/certs/
+src/certs/*.pem
+!src/certs/.gitkeep
 
 # IDE
 .idea/
@@ -26,4 +27,3 @@ venv/
 ../src/.env
 env
 EOF
-/docker-compose.yml
