@@ -22,6 +22,10 @@ class Product(Base):
     quantity: Mapped[int] = mapped_column(Integer, default=1)
     created_at: Mapped[datetime] = mapped_column(default=func.now())
 
+    category: Mapped[str] = mapped_column(
+        ForeignKey("categories.name"), nullable=False
+    )
+
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
