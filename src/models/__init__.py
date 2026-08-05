@@ -5,12 +5,14 @@ __all__ = (
     "DatabaseHelper",
     "User",
     "Profile",
+    "Category",
     # "Post",
     # "Order",
     # "OrderProductAssociation",
 )
 
 from .product import Product
+from .category import Category
 from .base import Base
 from .db_helper import db_helper, DatabaseHelper
 from .user import User
