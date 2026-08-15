@@ -7,6 +7,7 @@ from models import db_helper
 from .errors import forbidden
 from ..auth.schemas import UserRead
 from ..auth.service import get_current_active_auth_user
+from ..categories.service import check_category
 from . import crud
 from .schemas import (
     ProductRet,
@@ -25,12 +26,13 @@ def check_product_permission(product: ProductRet, user: UserRead):
         raise forbidden
 
 
-@router.post("/", response_model=ProductRet, status_code=status.HTTP_201_CREATED)
+@router.post("/")
 async def create_product(
     product: ProductCreate,
     user: UserRead = Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
+    await check_category(session, product.category_name)
     return await crud.create_product(
         product_data=product,
         user_id=user.id,
@@ -66,6 +68,7 @@ async def update_full_product(
     product: ProductRet = Depends(product_by_id),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
+    await check_category(session, product.category)
     check_product_permission(product, user)
     return await crud.update_product(
         product=product,

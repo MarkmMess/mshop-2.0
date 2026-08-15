@@ -27,7 +27,7 @@ async def get_products_by_user(session: AsyncSession, user_id: int) -> list[Prod
     return list(products)
 
 
-async def get_product(session: AsyncSession, product_id: int) -> ProductRet | None:
+async def get_product(session: AsyncSession, product_id: int) -> Product | None:
     return await session.get(Product, product_id)
 
 
@@ -35,7 +35,7 @@ async def create_product(
     session: AsyncSession,
     product_data: ProductCreate,
     user_id: int,
-) -> ProductRet:
+) -> Product | None:
     product_dict = product_data.model_dump()
     product_dict["user_id"] = user_id
     product = Product(**product_dict)
@@ -50,9 +50,11 @@ async def update_product(
     session: AsyncSession,
     product: ProductRet,
     product_update: ProductUpdate | ProductUpdatePartial,
+    category: str | None = None,
     partial: bool = False,
 ) -> ProductRet:
-
+    product_dict = product.model_dump()
+    product_dict["category"] = category
     for name, value in product_update.model_dump(exclude_unset=partial).items():
         setattr(product, name, value)
     await session.commit()
