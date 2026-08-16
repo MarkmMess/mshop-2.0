@@ -5,16 +5,14 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/app:/app/src
 
 RUN pip install --upgrade pip wheel "poetry==2.2.1"
-
 RUN poetry config virtualenvs.create false
 
 COPY poetry.lock pyproject.toml ./
 
-RUN poetry install --no-root
+RUN poetry install --no-root --no-interaction
 
-COPY src ./
+COPY src ./src
 
-RUN chmod +x prestart.sh
+RUN chmod +x src/prestart.sh
 
-ENTRYPOINT ["./prestart.sh"]
-CMD ["python", "main.py"]
+CMD ["src/prestart.sh"]
