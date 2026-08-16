@@ -16,7 +16,7 @@ async def product_by_id(
 ) -> ProductRet:
     product = await crud.get_product(session=session, product_id=product_id)
     if product:
-        return product
+        return ProductRet.model_validate(product)
     raise not_found()
 
 
