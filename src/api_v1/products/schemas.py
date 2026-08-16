@@ -33,6 +33,24 @@ class ProductUpdatePartial(ProductUpdate):
     pass
 
 
+class ProductsRet(BaseModel):
+    name: str
+    description: Optional[str] = None
+    price: Decimal
+    id: int
+    user_id: int
+    quantity: Optional[int] = Field(gt=0)
+    category_name: Optional[str] = Field(None, max_length=50)
+    created_at: datetime
+    model_config = ConfigDict(
+        from_attributes=True,
+        json_encoders={
+            Decimal: lambda v: float(v) if v else 0,
+            datetime: lambda v: v.isoformat(),
+        },
+    )
+
+
 class ProductRet(BaseModel):
     name: str
     description: Optional[str] = None
