@@ -5,11 +5,11 @@ from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import apaginate
 
 from .errors import not_found
-from .schemas import ProductCreate, ProductUpdate, ProductUpdatePartial, ProductRet
+from .schemas import ProductCreate, ProductUpdate, ProductUpdatePartial, ProductRet, ProductsRet
 from models.product import Product
 
 
-async def get_products(session: AsyncSession, params: Params) -> Page[ProductRet]:
+async def get_products(session: AsyncSession, params: Params) -> Page[ProductsRet]:
     stmt = select(Product).order_by(Product.created_at.desc())
     return await apaginate(session, stmt, params=params)
 
@@ -27,23 +27,24 @@ async def get_products_by_user(session: AsyncSession, user_id: int) -> list[Prod
     return list(products)
 
 
-async def get_product(session: AsyncSession, product_id: int) -> Product | None:
-    return await session.get(Product, product_id)
+async def get_product(session: AsyncSession, product_id: int) -> ProductRet:
+    result = await get_products_by_user(session, product_id)
+    return ProductRet.model_validate(result)
 
 
 async def create_product(
     session: AsyncSession,
     product_data: ProductCreate,
     user_id: int,
-) -> Product | None:
+) -> ProductRet | None:
     product_dict = product_data.model_dump()
     product_dict["user_id"] = user_id
     product = Product(**product_dict)
     session.add(product)
     await session.commit()
     await session.refresh(product)
-    ret = await get_product(session, product.id)
-    return ret
+    result = await get_product(session, product.id)
+    return ProductRet.model_validate(product) if result else None
 
 
 async def update_product(

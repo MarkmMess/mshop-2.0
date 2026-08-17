@@ -11,6 +11,7 @@ from ..categories.service import check_category
 from . import crud
 from .schemas import (
     ProductRet,
+    ProductsRet,
     ProductCreate,
     ProductUpdate,
     ProductUpdatePartial,
@@ -26,7 +27,7 @@ def check_product_permission(product: ProductRet, user: UserRead):
         raise forbidden
 
 
-@router.post("/")
+@router.post("/", response_model=ProductRet)
 async def create_product(
     product: ProductCreate,
     user: UserRead = Depends(get_current_active_auth_user),
