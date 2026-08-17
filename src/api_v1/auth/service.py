@@ -17,16 +17,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login/new/")
 router = APIRouter(prefix="/jwt", tags=["jwt"])
 
 
-async def user_by_id(
-    user_id: Annotated[int, Path],
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency),
-) -> UserRead:
-    user = await crud.get_user(session=session, user_id=user_id)
-    if user:
-        return user
-    raise not_found
-
-
 async def validate_auth_user(
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
     username: str = Form(...),

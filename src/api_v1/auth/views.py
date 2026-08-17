@@ -13,7 +13,6 @@ from .schemas import (
 from .service import (
     validate_auth_user,
     get_current_active_auth_user,
-    user_by_id,
 )
 from . import crud
 from . import security as auth_security
@@ -28,13 +27,6 @@ async def create_user(
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ) -> UserRead:
     return await crud.create_user(session, user)
-
-
-@router.get("/{user_id}", response_model=UserRead)
-async def get_user_by_id(
-    user: UserRead = Depends(user_by_id),
-) -> UserRead:
-    return user
 
 
 @router.post("/login/new/", response_model=TokenInfo)
