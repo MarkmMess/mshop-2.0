@@ -50,3 +50,31 @@ async def create_tables():
 
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+
+@pytest_asyncio.fixture(scope="function")
+async def session():
+    async with TestSessionLocal() as session:
+        yield session
+
+
+@pytest_asyncio.fixture(scope="function")
+async def client(session: AsyncSession):
+
+    # Replacing app session with session test one
+    async def override_session():
+        yield session
+
+    main_app.dependency_overrides[
+        db_helper.scoped_session_dependency
+    ] = override_session
+
+
+    transport = ASGITransport(app=main_app)
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test/api/v1",
+    ) as client:
+        yield client
+
+    main_app.dependency_overrides.clear()
