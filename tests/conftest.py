@@ -78,3 +78,31 @@ async def client(session: AsyncSession):
         yield client
 
     main_app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def user_data():
+    return {
+        "username": "test",
+        "password": "Test1234",
+        "email": "mail@mail.com",
+    }
+
+
+@pytest_asyncio.fixture
+async def create_user(
+    user_data: dict,
+    session: AsyncSession,
+):
+    user = User(
+        username=user_data["username"],
+        email=user_data["email"],
+        hashed_password=hash_password(user_data["password"]),
+        active=True,
+    )
+
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+
+    yield user
