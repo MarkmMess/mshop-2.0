@@ -21,7 +21,7 @@ from sqlalchemy.pool import NullPool
 
 from core.config import settings
 from models import User, Base
-from api_v1.auth.security import hash_password
+from api_v1.auth.security import hash_password, encode_jwt
 from main import main_app
 from models import db_helper
 
@@ -106,3 +106,12 @@ async def create_user(
     await session.refresh(user)
 
     yield user
+
+@pytest_asyncio.fixture
+async def get_jwt_token(create_user: User):
+    jwt_token = {
+        "sub": str(create_user.id),
+        "username": create_user.username,
+    }
+    token = encode_jwt(jwt_token)
+    yield token
