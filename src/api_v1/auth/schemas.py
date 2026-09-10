@@ -58,9 +58,6 @@ class UserValidation(UserSchema):
 
 class UserUpdate(BaseModel):
     model_config = ConfigDict(strict=True)
-    username: Optional[str] = Field(min_length=3, max_length=20, title="Username")
-    email: Optional[EmailStr]
+    username: str = Field(min_length=3, max_length=20, title="Username")
+    email: EmailStr
 
-
-class UserUpdatePartial(BaseModel):
-    pass
