@@ -11,20 +11,14 @@ from ..categories.service import check_category
 from . import crud
 from .schemas import (
     ProductRet,
-    ProductsRet,
     ProductCreate,
     ProductUpdate,
     ProductUpdatePartial,
 )
-from .dependencies import product_by_id, paginate
+from .dependencies import product_by_id, paginate, check_product_permission
 
 
 router = APIRouter()
-
-
-def check_product_permission(product: ProductRet, user: UserRead):
-    if product.user_id != user.id:
-        raise forbidden
 
 
 @router.post("/", response_model=ProductRet)
@@ -41,7 +35,7 @@ async def create_product(
     )
 
 
-@router.get("/", response_model=Page[ProductRet])
+@router.get("/products", response_model=Page[ProductRet])
 async def get_products(
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
     params: Params = Depends(paginate),
