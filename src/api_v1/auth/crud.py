@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .security import hash_password
@@ -21,9 +22,13 @@ async def create_user(session: AsyncSession, user_info: CreateUser) -> UserRead:
         active=True,
         hashed_password=hashed_password,
     )
-    session.add(user)
-    await session.commit()
-    await session.refresh(user)
+    try:
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+    except IntegrityError:
+        await session.rollback()
+        raise taken_name
     return UserRead.model_validate(user)
 
 
