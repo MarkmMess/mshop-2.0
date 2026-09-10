@@ -8,7 +8,6 @@ from .schemas import (
     UserRead,
     UserValidation,
     UserUpdate,
-    UserUpdatePartial,
 )
 from .service import (
     validate_auth_user,
@@ -45,10 +44,10 @@ async def auth_user_jwt(
     )
 
 
-@router.get("/check/user/")
+@router.get("/check/user/", response_model=UserRead)
 def auth_user_check_info(
     user: UserRead = Depends(get_current_active_auth_user),
-) -> UserRead:
+):
     return user
 
 
@@ -61,21 +60,7 @@ async def update_user(
     return await crud.update_user(session, user, update_user_scheme)
 
 
-@router.patch("/update_user_partial/", response_model=UserRead)
-async def update_user_partial(
-    update_user_scheme: UserUpdatePartial,
-    user: UserRead = Depends(get_current_active_auth_user),
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency),
-):
-    return await crud.update_user(
-        session=session,
-        user=user,
-        user_upd=update_user_scheme,
-        partial=True,
-    )
-
-
-@router.delete("/delete_user/")
+@router.delete("/delete_user/", response_model=str)
 async def delete_user(
     user: UserRead = Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),

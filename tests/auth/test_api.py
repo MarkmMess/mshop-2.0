@@ -83,23 +83,6 @@ async def test_update_user(
     assert response.json()['username'] == 'testik'
 
 
-# @pytest.mark.asyncio
-# async def test_update_user_partial(
-#         client: AsyncClient,
-#         get_jwt_token,
-# ):
-#
-#     response = await client.put("/auth/update_user_partial/",
-#                                  json={
-#                                      "username": "testik",
-#                                  },
-#                                  headers={"Authorization": f"Bearer {get_jwt_token}"}
-#                                 )
-#
-#     assert response.status_code == 200
-#     assert response.json()['username'] == 'testik'
-
-
 @pytest.mark.asyncio
 async def test_delete_user(
         client: AsyncClient,

@@ -66,9 +66,8 @@ async def update_user(
     session: AsyncSession,
     user: UserRead,
     user_upd: UserUpdate | UserUpdatePartial,
-    partial: bool = False,
 ) -> UserRead | None:
-    for name, value in user_upd.model_dump(exclude_unset=partial).items():
+    for name, value in user_upd.model_dump().items():
         setattr(user, name, value)
     try:
         await session.commit()
