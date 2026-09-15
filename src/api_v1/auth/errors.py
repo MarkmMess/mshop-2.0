@@ -13,6 +13,6 @@ inactive = HTTPException(
     detail="Inactive user",
 )
 taken_name = HTTPException(
-    status_code=status.HTTP_403_FORBIDDEN,
+    status_code=status.HTTP_409_CONFLICT,
     detail="Username is already taken ",
 )
