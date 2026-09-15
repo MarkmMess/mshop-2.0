@@ -53,3 +53,34 @@ async def test_get_user_products(
     )
     assert response.status_code == 200
     assert response.json() != []
+
+
+@pytest.mark.asyncio
+async def test_update_full_product(
+        client: AsyncClient,
+        create_product,
+        get_user_jwt,
+        product_data,
+):
+    product_data['name'] = 'newname'
+    response = await client.put(
+        "products/1",
+        json=product_data,
+        headers={"Authorization": f"Bearer {get_user_jwt}"}
+    )
+    assert response.status_code == 200
+
+    assert response.json()['name'] == 'newname'
+
+
+@pytest.mark.asyncio
+async def test_delete_product(
+        client: AsyncClient,
+        create_product,
+        get_jwt_token,
+):
+    response = await client.delete(
+        "products/1",
+        headers={"Authorization": f"Bearer {get_jwt_token}"},
+    )
+    assert response.status_code == 204
