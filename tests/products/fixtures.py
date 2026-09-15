@@ -14,6 +14,7 @@ def product_data():
         'description': 'product description',
         'price': 100,
         'quantity': 1,
+        'category_name': 'category',
     }
 
 @pytest_asyncio.fixture
@@ -21,9 +22,9 @@ async def create_product(
         product_data: dict,
         session: AsyncSession,
         create_user: User,
+        create_category
 ):
-    product_data['user_id'] = create_user.id
-    product = Product(**product_data)
+    product = Product(**product_data, user_id=create_user.id)
     session.add(product)
     await session.commit()
     await session.refresh(product)
@@ -34,7 +35,7 @@ async def create_product(
 async def create_category(
         session: AsyncSession,
 ):
-    category = Category(name='product')
+    category = Category(name='category')
     session.add(category)
     await session.commit()
     await session.refresh(category)
