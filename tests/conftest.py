@@ -3,15 +3,11 @@ import os
 os.environ["APP_DB__URL"] = (
     "postgresql+asyncpg://test_user:test_password@localhost:5433/test_shop_db"
 )
-# os.environ["APP_DB__URL"] = (
-#     "postgresql+asyncpg://postgres:postgres@localhost:5432/mshop"
-# )
 
 import pytest
 import pytest_asyncio
 
 from httpx import AsyncClient, ASGITransport
-from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
@@ -28,7 +24,7 @@ from models import db_helper
 
 test_engine = create_async_engine(
     str(settings.db.url),
-    echo=True,
+    # echo=True,
     poolclass=NullPool,
 )
 
