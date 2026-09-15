@@ -15,3 +15,9 @@ def not_found():
         status_code=status.HTTP_404_NOT_FOUND,
         detail="Product not found",
     )
+
+def unprocessable_entity():
+    return HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Quantity must be greater than 0",
+    )
