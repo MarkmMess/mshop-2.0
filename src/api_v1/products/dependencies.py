@@ -7,17 +7,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .errors import not_found, unprocessable_entity, forbidden
 from .schemas import ProductRet
 from . import crud
-from models import db_helper
+from models import db_helper, Product
 from ..auth.schemas import UserRead
 
 
 async def product_by_id(
     product_id: Annotated[int, Path],
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
-) -> ProductRet:
+) -> Product:
     product = await crud.get_product(session=session, product_id=product_id)
     if product:
-        return ProductRet.model_validate(product)
+        return product
     raise not_found()
 
 
@@ -33,6 +33,6 @@ def check_quantity(quantity: int):
         raise unprocessable_entity
 
 
-def check_product_permission(product: ProductRet, user: UserRead):
+def check_product_permission(product: ProductRet | Product, user: UserRead):
     if product.user_id != user.id:
         raise forbidden

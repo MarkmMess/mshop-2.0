@@ -7,7 +7,7 @@ from models import (
     User,
     Product,
 )
-from .schemas import CreateUser, UserRead, UserValidation, UserUpdate, UserUpdatePartial
+from .schemas import CreateUser, UserRead, UserValidation, UserUpdate
 from .errors import not_found, taken_name
 
 
@@ -32,7 +32,7 @@ async def create_user(session: AsyncSession, user_info: CreateUser) -> UserRead:
     return UserRead.model_validate(user)
 
 
-async def get_user(session: AsyncSession, user_id: int) -> UserRead | None:
+async def get_user(session: AsyncSession, user_id: int) -> User | None:
     stmt = select(User).where(User.id == user_id)
     user = await session.scalar(stmt)
     return user
@@ -65,7 +65,7 @@ async def get_user_with_products(session: AsyncSession, username: str):
 async def update_user(
     session: AsyncSession,
     user: UserRead,
-    user_upd: UserUpdate | UserUpdatePartial,
+    user_upd: UserUpdate,
 ) -> UserRead | None:
     for name, value in user_upd.model_dump().items():
         setattr(user, name, value)
@@ -77,7 +77,6 @@ async def update_user(
         raise taken_name
 
 
-async def del_user(session: AsyncSession, user):
+async def del_user(session: AsyncSession, user: UserRead) -> None:
     await session.delete(user)
     await session.commit()
-    return "message: User deleted"

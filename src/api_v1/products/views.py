@@ -3,8 +3,7 @@ from fastapi.params import Depends
 from fastapi_pagination import Page, Params
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from models import db_helper
-from .errors import forbidden
+from models import db_helper, User, Product
 from ..auth.schemas import UserRead
 from ..auth.service import get_current_active_auth_user
 from ..categories.service import check_category
@@ -21,7 +20,7 @@ from .dependencies import product_by_id, paginate, check_product_permission
 router = APIRouter()
 
 
-@router.post("/", response_model=ProductRet)
+@router.post("/new", response_model=ProductRet, status_code=status.HTTP_201_CREATED)
 async def create_product(
     product: ProductCreate,
     user: UserRead = Depends(get_current_active_auth_user),
@@ -44,7 +43,7 @@ async def get_products(
 
 
 @router.get("/{product_id}", response_model=ProductRet)
-async def get_product(product: ProductRet = Depends(product_by_id)):
+async def get_product(product: Product = Depends(product_by_id)):
     return product
 
 
@@ -60,10 +59,9 @@ async def get_user_products(
 async def update_full_product(
     product_update: ProductUpdate,
     user: UserRead = Depends(get_current_active_auth_user),
-    product: ProductRet = Depends(product_by_id),
+    product: Product = Depends(product_by_id),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
-    await check_category(session, product.category)
     check_product_permission(product, user)
     return await crud.update_product(
         product=product,
@@ -75,7 +73,7 @@ async def update_full_product(
 @router.patch("/{product_id}", response_model=ProductRet)
 async def product_update_partial(
     product_update: ProductUpdatePartial,
-    product: ProductRet = Depends(product_by_id),
+    product: Product = Depends(product_by_id),
     user: UserRead = Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
@@ -91,7 +89,7 @@ async def product_update_partial(
 @router.delete("/{product_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_product(
     product: ProductRet = Depends(product_by_id),
-    user: UserRead = Depends(get_current_active_auth_user),
+    user: User = Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ) -> None:
     check_product_permission(product, user)
