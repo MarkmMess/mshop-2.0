@@ -4,12 +4,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import apaginate
 
+from .dependencies import check_quantity
 from .errors import not_found
-from .schemas import ProductCreate, ProductUpdate, ProductUpdatePartial, ProductRet, ProductsRet
+from .schemas import ProductCreate, ProductUpdate, ProductUpdatePartial, ProductRet
 from models.product import Product
+from ..categories.service import check_category
 
 
-async def get_products(session: AsyncSession, params: Params) -> Page[ProductsRet]:
+async def get_products(session: AsyncSession, params: Params) -> Page[ProductRet]:
     stmt = select(Product).order_by(Product.created_at.desc())
     return await apaginate(session, stmt, params=params)
 
@@ -27,9 +29,9 @@ async def get_products_by_user(session: AsyncSession, user_id: int) -> list[Prod
     return list(products)
 
 
-async def get_product(session: AsyncSession, product_id: int) -> ProductRet:
-    result = await get_products_by_user(session, product_id)
-    return ProductRet.model_validate(result)
+async def get_product(session: AsyncSession, product_id: int) -> Product | None:
+    result = await session.get(Product, product_id)
+    return result
 
 
 async def create_product(
@@ -37,25 +39,32 @@ async def create_product(
     product_data: ProductCreate,
     user_id: int,
 ) -> ProductRet | None:
+
+    await check_category(session, product_data.category_name)
+    check_quantity(product_data.quantity)
+
     product_dict = product_data.model_dump()
     product_dict["user_id"] = user_id
     product = Product(**product_dict)
+
     session.add(product)
     await session.commit()
     await session.refresh(product)
+
     result = await get_product(session, product.id)
+
     return ProductRet.model_validate(product) if result else None
 
 
 async def update_product(
     session: AsyncSession,
-    product: ProductRet,
+    product: Product,
     product_update: ProductUpdate | ProductUpdatePartial,
-    category: str | None = None,
     partial: bool = False,
-) -> ProductRet:
-    product_dict = product.model_dump()
-    product_dict["category"] = category
+) -> Product:
+    check_quantity(product_update.quantity)
+    await check_category(session, str(product_update.category_name))
+
     for name, value in product_update.model_dump(exclude_unset=partial).items():
         setattr(product, name, value)
     await session.commit()
