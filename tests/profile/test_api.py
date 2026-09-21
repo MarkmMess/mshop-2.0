@@ -43,3 +43,44 @@ async def test_get_user_profile(
     )
     assert response.status_code == 200
     assert response.json()['first_name'] == create_profile_with_user.first_name
+
+
+@pytest.mark.asyncio
+async def test_profile_product(
+        client: AsyncClient,
+        create_product,
+        create_profile,
+):
+    response = await client.get(
+        url="/profile/profile/products/1",
+    )
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_update_profile(
+        client: AsyncClient,
+        create_profile_with_user,
+        profile_data: dict,
+        get_user_jwt,
+):
+    profile_data['first_name'] = 'newName'
+    response = await client.put(
+        url="/profile/profile/update",
+        json=profile_data,
+        headers={"Authorization": f"Bearer {get_user_jwt}"}
+    )
+    assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_delete_profile(
+        client: AsyncClient,
+        create_profile_with_user,
+        get_user_jwt,
+):
+    response = await client.delete(
+        url="/profile/delete",
+        headers={"Authorization": f"Bearer {get_user_jwt}"}
+    )
+    assert response.status_code == 204
