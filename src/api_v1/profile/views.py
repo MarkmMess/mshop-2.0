@@ -48,9 +48,9 @@ async def profile_update(
     profile: UpdateProfile,
     user=Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
-) -> ProfileRead:
+):
     return await crud.update_profile(
-        profile=profile,
+        profile_update=profile,
         partial=False,
         user_id=user.id,
         session=session,
