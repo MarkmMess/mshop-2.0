@@ -1,9 +1,10 @@
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
+from models import User
 from models.profile import Profile
 from .schemas import CreateProfile, UpdateProfile
-from api_v1.products.crud import get_products_by_user
 from .errors import not_found
 
 
@@ -39,27 +40,36 @@ async def get_profile_with_products(
     user_id: int,
     session: AsyncSession,
 ):
-    try:
-        profile = await session.get(Profile, user_id)
-        products = await get_products_by_user(session, user_id)
-    except:
+    stmt = (
+        select(User)
+        .where(User.id == user_id)
+        .options(
+            selectinload(User.profile),
+            selectinload(User.products),
+        )
+    )
+    result = await session.execute(stmt)
+    user = result.scalar_one_or_none()
+    if not user:
         raise not_found()
 
-    return profile, products
+    return user.profile, user.products
 
 
 async def update_profile(
-    profile: UpdateProfile,
+    profile_update: UpdateProfile,
     partial: bool,
     user_id: int,
     session: AsyncSession,
-):
-    if not await session.get(Profile, user_id):
+) -> type[Profile | None]:
+    profile = await session.get(Profile, user_id)
+    if not profile:
         raise not_found()
-    for field, value in profile.model_dump(exclude_unset=partial).items():
+    for field, value in profile_update.model_dump(exclude_unset=partial).items():
         setattr(profile, field, value)
     await session.commit()
-    return await get_profile(user_id, session)
+    await session.refresh(profile)
+    return profile
 
 
 async def delete_profile(
@@ -72,4 +82,3 @@ async def delete_profile(
         await session.commit()
     except:
         raise not_found()
-    return "{message}: profile deleted successfully"
