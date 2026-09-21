@@ -60,9 +60,9 @@ async def update_user(
     return await crud.update_user(session, user, update_user_scheme)
 
 
-@router.delete("/delete_user/", response_model=str)
+@router.delete("/delete_user/")
 async def delete_user(
     user: UserRead = Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
-    return await crud.del_user(session, user)
+    await crud.del_user(session, user)
