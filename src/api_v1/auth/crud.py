@@ -1,12 +1,10 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+# from sqlalchemy.orm import selectinload
 
 from .security import hash_password
-from models import (
-    User,
-    Product,
-)
+from models import User
 from .schemas import CreateUser, UserRead, UserValidation, UserUpdate
 from .errors import not_found, taken_name
 
@@ -46,20 +44,16 @@ async def get_user_for_validation(
     return user
 
 
-async def get_user_with_products(session: AsyncSession, username: str):
-    stmt = select(User).where(User.username == username)
-    user: User | None = await session.scalar(stmt)
-    if user:
-        ret = f"username: {user.username}"
-        stmt = select(Product).where(Product.user_id == user.id)
-        products: list[Product] | None = await session.scalar(stmt)
-        if products:
-            ret += "*" * 10
-            ret += "Items for sale:"
-            for product in products:
-                ret += f"name: {product.name} price: {product.price}"
-        return ret
-    raise not_found
+# async def get_user_with_products(session: AsyncSession, username: str):
+#     stmt = (
+#         select(User)
+#         .where(User.username == username)
+#         .options(selectinload(User.products))
+#     )
+#     user_with_products = await session.scalar(stmt)
+#     if not user_with_products:
+#         raise not_found
+#     return user_with_products
 
 
 async def update_user(
