@@ -10,7 +10,7 @@ from ..auth.service import get_current_active_auth_user
 router = APIRouter()
 
 
-@router.post("/create", response_model=ProfileRead)
+@router.post("/create", response_model=ProfileRead, status_code=201)
 async def create_profile(
     profile: CreateProfile,
     user=Depends(get_current_active_auth_user),
@@ -57,21 +57,7 @@ async def profile_update(
     )
 
 
-@router.patch("/profile/update/partial", response_model=ProfileRead)
-async def profile_update_partial(
-    profile: UpdateProfile,
-    user=Depends(get_current_active_auth_user),
-    session: AsyncSession = Depends(db_helper.scoped_session_dependency),
-) -> ProfileRead:
-    return await crud.update_profile(
-        profile=profile,
-        partial=True,
-        user_id=user.id,
-        session=session,
-    )
-
-
-@router.delete("/delete")
+@router.delete("/delete", status_code=204)
 async def delete_profile(
     user: UserRead = Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
