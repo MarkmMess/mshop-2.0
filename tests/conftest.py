@@ -111,3 +111,15 @@ async def get_jwt_token(create_user: User):
     }
     token = encode_jwt(jwt_token)
     yield token
+
+
+@pytest_asyncio.fixture
+async def get_user_jwt(
+        user_data: dict,
+):
+    jwt_token = {
+        "sub": '1',
+        "username": user_data['username'],
+    }
+    token = encode_jwt(jwt_token)
+    yield token
