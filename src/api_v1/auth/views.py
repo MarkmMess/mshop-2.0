@@ -51,6 +51,19 @@ def auth_user_check_info(
     return user
 
 
+@router.get("/user/{user_id}", response_model=UserRead)
+async def get_user_by_id(
+    user_id: int,
+    session: AsyncSession = Depends(db_helper.scoped_session_dependency),
+):
+    user = await crud.get_user(session, user_id)
+    if user is None:
+        from fastapi import HTTPException
+
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 @router.put("/update_user/", response_model=UserRead)
 async def update_user(
     update_user_scheme: UserUpdate,
