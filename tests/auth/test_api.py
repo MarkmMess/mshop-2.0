@@ -14,6 +14,26 @@ async def test_create_user(
 
 
 @pytest.mark.asyncio
+async def test_create_short_password(
+        client: AsyncClient,
+        user_data: dict,
+):
+    user_data["password"] = 'small'
+    response = await client.post("/auth/signIn", json=user_data)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_weak_password(
+        client: AsyncClient,
+        user_data: dict,
+):
+    user_data["password"] = 'withoutnumbers'
+    response = await client.post("/auth/signIn", json=user_data)
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_error_create_user(
         client: AsyncClient,
         create_user: None,
@@ -64,6 +84,20 @@ async def test_auth_user_check_info(
         headers={"Authorization": f"Bearer {get_jwt_token}"}
     )
     assert response.status_code == 200
+
+
+@pytest.mark.asyncio
+async def test_get_user_by_id(
+        client: AsyncClient,
+        get_jwt_token,
+):
+    response = await client.get(
+        "/auth/user/1",
+        headers={"Authorization": f"Bearer {get_jwt_token}"}
+    )
+
+    assert response.status_code == 200
+    assert response.json()['username']
 
 
 @pytest.mark.asyncio
