@@ -12,23 +12,32 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d mshop"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: mshop_app
+    working_dir: /app
     depends_on:
       db:
         condition: service_healthy
     env_file:
       - .env
+    environment:
+      APP_DB__URL: postgresql+asyncpg://postgres:postgres@db:5432/mshop
+      APP_DB__ECHO: "0"
     ports:
       - "8000:8000"
     volumes:
       - ./src:/app/src
-    command: ["sh", "-c", "src/prestart.sh && uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload"]
+    command: >
+      bash -lc "src/prestart.sh && uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload"
+    restart: unless-stopped
+
 volumes:
   postgres_data:
