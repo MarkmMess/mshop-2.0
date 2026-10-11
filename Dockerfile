@@ -1,5 +1,7 @@
 FROM python:3.13.5-bookworm
 
+WORKDIR /app
+
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONPATH=/app:/app/src
@@ -15,4 +17,4 @@ COPY src ./src
 
 RUN chmod +x src/prestart.sh
 
-CMD ["src/prestart.sh"]
+CMD ["bash", "-lc", "src/prestart.sh"]
