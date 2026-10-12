@@ -66,7 +66,7 @@ async def update_user(
     try:
         await session.commit()
         await session.refresh(user)
-        return await get_user(session, user.id)
+        return user
     except Exception:
         raise taken_name
 
