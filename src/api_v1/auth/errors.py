@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 
 not_found = HTTPException(
     status_code=status.HTTP_404_NOT_FOUND,
-    detail="Not found",
+    detail="User not found",
 )
 unauth = HTTPException(
     status_code=status.HTTP_401_UNAUTHORIZED,

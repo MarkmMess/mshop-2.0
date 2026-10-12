@@ -30,9 +30,11 @@ async def create_user(session: AsyncSession, user_info: CreateUser) -> UserRead:
     return UserRead.model_validate(user)
 
 
-async def get_user(session: AsyncSession, user_id: int) -> User | None:
+async def get_user(session: AsyncSession, user_id: int) -> User:
     stmt = select(User).where(User.id == user_id)
     user = await session.scalar(stmt)
+    if user is None:
+        raise not_found
     return user
 
 

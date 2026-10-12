@@ -57,10 +57,6 @@ async def get_user_by_id(
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
     user = await crud.get_user(session, user_id)
-    if user is None:
-        from fastapi import HTTPException
-
-        raise HTTPException(status_code=404, detail="User not found")
     return user
 
 
