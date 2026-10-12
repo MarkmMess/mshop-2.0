@@ -98,6 +98,8 @@ async def test_get_user_by_id(
 
     assert response.status_code == 200
     assert response.json()['username']
+    with pytest.raises(KeyError):
+        _ = response.json()['email']
 
 
 @pytest.mark.asyncio
