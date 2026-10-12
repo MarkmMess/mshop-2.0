@@ -8,10 +8,12 @@ from .schemas import (
     UserRead,
     UserValidation,
     UserUpdate,
+    UserPublicRead,
 )
 from .service import (
     validate_auth_user,
     get_current_active_auth_user,
+    get_public_user,
 )
 from . import crud
 from . import security as auth_security
@@ -51,13 +53,12 @@ def auth_user_check_info(
     return user
 
 
-@router.get("/user/{user_id}", response_model=UserRead)
+@router.get("/user/{user_id}", response_model=UserPublicRead)
 async def get_user_by_id(
     user_id: int,
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
-    user = await crud.get_user(session, user_id)
-    return user
+    return await get_public_user(session, user_id)
 
 
 @router.put("/update_user/", response_model=UserRead)

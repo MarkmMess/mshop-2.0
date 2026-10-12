@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from models import db_helper
 from . import crud
 from .errors import not_found, unauth, inactive
-from .schemas import UserRead, UserValidation
+from .schemas import UserRead, UserPublicRead, UserValidation
 import api_v1.auth.security as auth_security
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login/new/")
@@ -60,3 +60,11 @@ def get_current_active_auth_user(
     if user.active:
         return user
     raise inactive
+
+
+async def get_public_user(
+        session: AsyncSession,
+        user_id: int,
+) -> UserPublicRead:
+    user = await crud.get_user(session, user_id)
+    return UserPublicRead.model_validate(user)

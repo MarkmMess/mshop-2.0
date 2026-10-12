@@ -51,6 +51,13 @@ class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UserPublicRead(BaseModel):
+    id: int
+    username: str
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class UserValidation(UserSchema):
     model_config = ConfigDict(strict=True)
     id: int
