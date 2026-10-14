@@ -8,6 +8,7 @@ async def test_create_product(
         client: AsyncClient,
         get_jwt_token,
         product_data,
+        create_profile,
 ):
 
     response = await client.post(
@@ -16,6 +17,21 @@ async def test_create_product(
         headers={"Authorization": f"Bearer {get_jwt_token}"},
         )
     assert response.status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_error_create_product(
+        client: AsyncClient,
+        get_jwt_token,
+        product_data,
+):
+
+    response = await client.post(
+        "/products/new",
+        json=product_data,
+        headers={"Authorization": f"Bearer {get_jwt_token}"},
+        )
+    assert response.status_code == 403
 
 
 @pytest.mark.asyncio
