@@ -1,14 +1,16 @@
 from typing import Annotated
 
-from fastapi import Depends, Path, Query
+from fastapi import Depends, Path, Query, HTTPException
 from fastapi_pagination import Params
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .errors import not_found, unprocessable_entity, forbidden
-from .schemas import ProductRet
+from .schemas import ProductRet, ProductCreate
 from . import crud
 from models import db_helper, Product
 from ..auth.schemas import UserRead
+from ..profile.crud import get_profile
+from ..categories.service import check_category
 
 
 async def product_by_id(
@@ -36,3 +38,21 @@ def check_quantity(quantity: int):
 def check_product_permission(product: ProductRet | Product, user: UserRead):
     if product.user_id != user.id:
         raise forbidden
+
+
+async def check_create_product_permission(
+        product_data: ProductCreate, 
+        user_id: int,
+        session: AsyncSession,
+):
+    try:
+        await get_profile(user_id, session)
+    except HTTPException as err:
+        if err.status_code != 404:
+            raise
+        raise forbidden(
+            detail="User profile not found. Please create a profile first."
+        ) from None
+    
+    await check_category(session, product_data.category_name)
+    check_quantity(product_data.quantity)

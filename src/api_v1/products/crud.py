@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import apaginate
 
-from .dependencies import check_quantity
+from .dependencies import check_quantity, check_create_product_permission
 from .errors import not_found
 from .schemas import ProductCreate, ProductUpdate, ProductUpdatePartial, ProductRet
 from models.product import Product
@@ -39,9 +39,7 @@ async def create_product(
     product_data: ProductCreate,
     user_id: int,
 ) -> ProductRet | None:
-
-    await check_category(session, product_data.category_name)
-    check_quantity(product_data.quantity)
+    await check_create_product_permission(product_data, user_id, session)
 
     product_dict = product_data.model_dump()
     product_dict["user_id"] = user_id

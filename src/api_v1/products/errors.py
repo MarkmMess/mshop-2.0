@@ -3,10 +3,10 @@ from fastapi import HTTPException, status
 from models import product, user
 
 
-def forbidden():
+def forbidden(detail="Forbidden"):
     return HTTPException(
         status_code=status.HTTP_403_FORBIDDEN,
-        detail=f"User {product.user_id} does not belong to {user.id}",
+        detail=detail,
     )
 
 
