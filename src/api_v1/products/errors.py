@@ -10,10 +10,10 @@ def forbidden(detail="Forbidden"):
     )
 
 
-def not_found():
+def not_found(detail="Product not found"):
     return HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
-        detail="Product not found",
+        detail=detail,
     )
 
 def unprocessable_entity():
