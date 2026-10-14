@@ -1,106 +1,200 @@
 # MShop 2.0
 
-An e-commerce API built with **FastAPI** and **PostgreSQL**.
-
-This project is designed for learning backend development, SQL, and application architecture.
+A marketplace-style backend with FastAPI, SQLAlchemy, PostgreSQL, JWT auth, and a lightweight frontend served from the app itself.
 
 ---
 
-## Quick Start (Docker)
+## Requirements
 
-This is the easiest way to run the project — everything is preconfigured.
+- Docker Desktop or Docker Engine
+- Docker Compose
+- Python 3.13+ recommended
+- Poetry
+- OpenSSL
 
-### 1. Clone the repository
+---
 
-```bash
-git clone https://github.com/your_username/mshop2.0
-cd mshop2.0
-```
-### 2. Create environment variables file
+## Run with Docker
+
+This is the simplest way to start the full app.
+
+### 1. Copy environment variables
 
 ```bash
 cp .env.example .env
 ```
 
-### 3. Start with Docker Compose
+If the repository does not include `.env.example`, create a `.env` file with:
 
-```bash
-docker-compose up -d --build
+```env
+APP_DB__URL=postgresql+asyncpg://postgres:postgres@db:5432/mshop
+APP_DB__ECHO=0
 ```
 
-### 4. Open API documentation
-
-http://localhost:8000/docs
-
-### 5. Stop the application
+### 2. Start the app and PostgreSQL
 
 ```bash
-docker-compose down
+docker compose up -d --build
 ```
 
-## Local Development (without Docker)
+### 3. Open the app
 
-If you prefer to run the project locally:
+- Frontend: http://localhost:8000/
+- API docs: http://localhost:8000/docs
 
-### 1. Install Python 3.10+
+### 4. Stop it
 
-Check your version:
 ```bash
-python --version  # Should be 3.10 or higher
+docker compose down
 ```
 
-### 2. Install Poetry and dependencies
+---
+
+## Local development
+
+### 1. Install dependencies
 
 ```bash
 pip install poetry
 poetry install
 ```
 
-### 3. Create .env file inside src directory
+### 2. Create certificates for JWT
 
 ```bash
-cp src/env.template src/.env
-```
-Edit src/.env:
-```bash
-APP_DB__URL=postgresql+asyncpg://postgres:postgres@localhost:5432/mshop
-APP_DB__ECHO=1
-```
-
-### 4. Generate JWT certificates
-
-```bash
-# Make sure openssl is installed (preinstalled on macOS/Linux)
 mkdir -p src/certs
 openssl genrsa -out src/certs/jwt-private.pem 2048
 openssl rsa -in src/certs/jwt-private.pem -outform PEM -pubout -out src/certs/jwt-public.pem
 ```
 
-### 5. Start PostgreSQL (if not already running)
+### 3. Start the database only
 
 ```bash
-docker-compose up -d db
+docker compose up -d db
 ```
 
-### 6. Apply database migrations
+### 4. Run the app
+
+From project root:
 
 ```bash
-alembic upgrade head
+poetry run uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
 ```
 
-### 7. Run the server
+Or use the app entrypoint:
 
 ```bash
-cd src
-uvicorn main:app --reload
+python src/main.py
 ```
 
-## Tech Stack
+---
 
-- FastAPI — modern Python web framework
-- SQLAlchemy 2.0 — async ORM
-- Alembic — database migrations
-- PostgreSQL — relational database
-- Poetry — dependency management
-- Docker Compose — container orchestration
-- JWT (RS256) — authentication
+## Run tests
+
+The test suite uses the dedicated PostgreSQL container in [docker-compose.test.yml](docker-compose.test.yml).
+
+Start the test database first:
+
+```bash
+docker compose -f docker-compose.test.yml up -d
+```
+
+Then run the tests:
+
+```bash
+pytest
+```
+
+### Run one file
+
+```bash
+pytest tests/auth/test_api.py
+```
+
+### Run one test
+
+```bash
+pytest tests/auth/test_api.py -k create_user
+```
+
+### Stop the test database
+
+```bash
+docker compose -f docker-compose.test.yml down
+```
+
+---
+
+## Common fixes
+
+### 1. `ModuleNotFoundError` or missing packages
+
+```bash
+poetry install
+```
+
+### 2. `Connection refused` to PostgreSQL
+
+Start the database:
+
+```bash
+docker compose up -d db
+```
+
+Then verify:
+
+```bash
+docker compose ps
+```
+
+### 3. JWT certificates missing
+
+```bash
+mkdir -p src/certs
+openssl genrsa -out src/certs/jwt-private.pem 2048
+openssl rsa -in src/certs/jwt-private.pem -outform PEM -pubout -out src/certs/jwt-public.pem
+```
+
+### 4. App starts but frontend looks outdated in Safari
+
+This is a cache problem. The app now sends no-store headers and versioned asset URLs. Hard-refresh once:
+
+- Safari: Command + Option + R
+- Or open Dev Tools and empty caches
+
+### 5. `uvicorn` cannot find `src.main`
+
+Run from the project root, not inside the `src` folder:
+
+```bash
+poetry run uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
+```
+
+### 6. Migrations not applied
+
+```bash
+poetry run alembic upgrade head
+```
+
+---
+
+## Project structure
+
+- `src/main.py` — FastAPI app entrypoint
+- `src/api_v1/` — routers and logic for auth, products, profile, categories, stats
+- `src/models/` — SQLAlchemy models
+- `src/static/` — frontend HTML/CSS/JS served by FastAPI
+- `tests/` — API and app tests
+
+---
+
+## Tech stack
+
+- FastAPI
+- Async SQLAlchemy
+- PostgreSQL
+- Alembic
+- JWT (RS256)
+- Poetry
+- Docker Compose
+- Uvicorn
