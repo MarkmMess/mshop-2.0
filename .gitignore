@@ -27,3 +27,4 @@ venv/
 ../src/.env
 env
 EOF
+.vscode/settings.json
