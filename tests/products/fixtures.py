@@ -2,8 +2,8 @@ import pytest
 import pytest_asyncio
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from api_v1.auth.security import encode_jwt
-from models import Product, User, Category
+from src.api_v1.auth.security import encode_jwt
+from src.models import Product, User, Category, Profile
 from ..conftest import session, create_user, user_data
 
 
@@ -40,6 +40,17 @@ async def create_category(
     await session.commit()
     await session.refresh(category)
     yield category
+
+
+@pytest_asyncio.fixture
+async def create_profile(
+        session: AsyncSession,
+):
+    profile = Profile(first_name='John', last_name='Doe', user_id=1)
+    session.add(profile)
+    await session.commit()
+    await session.refresh(profile)
+    yield profile
 
 
 @pytest_asyncio.fixture
