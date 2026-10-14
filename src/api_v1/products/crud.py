@@ -49,9 +49,7 @@ async def create_product(
     await session.commit()
     await session.refresh(product)
 
-    result = await get_product(session, product.id)
-
-    return ProductRet.model_validate(product) if result else None
+    return ProductRet.model_validate(product) if product else None
 
 
 async def update_product(
