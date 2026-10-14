@@ -26,7 +26,6 @@ async def create_product(
     user: UserRead = Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
-    await check_category(session, product.category_name)
     return await crud.create_product(
         product_data=product,
         user_id=user.id,
