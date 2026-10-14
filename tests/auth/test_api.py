@@ -50,11 +50,11 @@ async def test_get_auth_token(
         user_data: dict
 ):
     response = await client.post(
-            "/auth/login/new/",
-            data={
-                "username": user_data['username'],
-                "password": user_data['password']
-            },
+        "/auth/login/new/",
+        data={
+            "username": user_data['username'],
+            "password": user_data['password']
+        },
     )
     assert response.status_code == 200
     result = response.json()['access_token']
@@ -68,7 +68,7 @@ async def test_error_auth_token(
         create_user,
 ):
     response = await client.post(
-        "/login/new/",
+        "/auth/login/new/",
         data={"username": "labuba", "password": "228"}
     )
     assert response.status_code == 404
@@ -107,13 +107,14 @@ async def test_update_user(
         client: AsyncClient,
         get_jwt_token,
 ):
-    response = await client.put("/auth/update_user/",
-                               json={
-                                         "username": "testik",
-                                         "email": "email@mail.com"
-                               },
-                               headers={"Authorization": f"Bearer {get_jwt_token}"}
-                                )
+    response = await client.put(
+        "/auth/update_user/",
+        json={
+            "username": "testik",
+            "email": "email@mail.com"
+        },
+        headers={"Authorization": f"Bearer {get_jwt_token}"}
+    )
 
     assert response.status_code == 200
     assert response.json()['username'] == 'testik'
