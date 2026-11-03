@@ -10,7 +10,7 @@ A marketplace-style backend with FastAPI, SQLAlchemy, PostgreSQL, JWT auth, and 
 - Docker Compose
 - Python 3.13+ recommended
 - Poetry
-- OpenSSL
+- OpenSSL (or Python, to generate the JWT secret)
 
 ---
 
@@ -24,11 +24,10 @@ This is the simplest way to start the full app.
 cp .env.example .env
 ```
 
-If the repository does not include `.env.example`, create a `.env` file with:
+Generate a JWT secret and put it into `.env`:
 
-```env
-APP_DB__URL=postgresql+asyncpg://postgres:postgres@db:5432/mshop
-APP_DB__ECHO=0
+```bash
+openssl rand -base64 32
 ```
 
 ### 2. Start the app and PostgreSQL
@@ -59,12 +58,24 @@ pip install poetry
 poetry install
 ```
 
-### 2. Create certificates for JWT
+### 2. Create a secret for JWT
+
+### 2. Create a secret for JWT
+
+Generate a random secret:
 
 ```bash
-mkdir -p src/certs
-openssl genrsa -out src/certs/jwt-private.pem 2048
-openssl rsa -in src/certs/jwt-private.pem -outform PEM -pubout -out src/certs/jwt-public.pem
+openssl rand -base64 32
+```
+
+Copy `.env.example` to `.env` and paste the result into it:
+
+```bash
+cp .env.example .env
+```
+
+```env
+APP_AUTH_JWT__SECRET=<generated string>
 ```
 
 ### 3. Start the database only
@@ -147,12 +158,16 @@ Then verify:
 docker compose ps
 ```
 
-### 3. JWT certificates missing
+### 3. JWT secret is missing
+
+If the app fails on startup with a settings validation error, `.env` has no JWT secret. Generate one and add it:
 
 ```bash
-mkdir -p src/certs
-openssl genrsa -out src/certs/jwt-private.pem 2048
-openssl rsa -in src/certs/jwt-private.pem -outform PEM -pubout -out src/certs/jwt-public.pem
+openssl rand -base64 32
+```
+
+```env
+APP_AUTH_JWT__SECRET=<generated string>
 ```
 
 ### 4. App starts but frontend looks outdated in Safari
@@ -194,7 +209,7 @@ poetry run alembic upgrade head
 - Async SQLAlchemy
 - PostgreSQL
 - Alembic
-- JWT (RS256)
+- JWT (HS256)
 - Poetry
 - Docker Compose
 - Uvicorn

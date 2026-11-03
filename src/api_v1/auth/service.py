@@ -1,5 +1,3 @@
-from typing import Annotated
-
 from fastapi import APIRouter, Depends, Form, Path
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError
@@ -14,7 +12,7 @@ import api_v1.auth.security as auth_security
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login/new/")
 
 
-router = APIRouter(prefix="/jwt", tags=["jwt"])
+# router = APIRouter(prefix="/jwt", tags=["jwt"])
 
 
 async def validate_auth_user(
@@ -63,8 +61,8 @@ def get_current_active_auth_user(
 
 
 async def get_public_user(
-        session: AsyncSession,
-        user_id: int,
+    session: AsyncSession,
+    user_id: int,
 ) -> UserPublicRead:
     user = await crud.get_user(session, user_id)
     return UserPublicRead.model_validate(user)

@@ -9,7 +9,7 @@ from core.config import settings
 
 def encode_jwt(
     token: dict,
-    private_key: str = settings.auth_jwt.private_key_path.read_text(),
+    secret: str = settings.auth_jwt.secret,
     algorithm: str = settings.auth_jwt.algorithm,
     expire_minutes: int = settings.auth_jwt.token_expire_minutes,
     expire_timedelta: timedelta | None = None,
@@ -26,7 +26,7 @@ def encode_jwt(
     )
     encode = jwt.encode(
         to_encode,
-        private_key,
+        secret,
         algorithm=algorithm,
     )
     return encode
@@ -34,11 +34,11 @@ def encode_jwt(
 
 def decode_jwt(
     token: str,
-    public_key: str = settings.auth_jwt.public_key_path.read_text(),
+    secret: str = settings.auth_jwt.secret,
     algorithm: str = settings.auth_jwt.algorithm,
 ):
     try:
-        decoded = jwt.decode(token, public_key, algorithms=[algorithm])
+        decoded = jwt.decode(token, secret, algorithms=[algorithm])
         return decoded
     except JWTError:
         raise
