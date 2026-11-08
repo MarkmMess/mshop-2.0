@@ -28,7 +28,7 @@ async def create_user(
 ) -> UserRead:
     user = await crud.create_user(session, user)
     set_auth_cookie(response, user.id, user.username)
-    return await crud.create_user(session, user)
+    return user
 
 
 @router.post("/logout", response_model=dict)
