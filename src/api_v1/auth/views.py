@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import db_helper
 from .schemas import (
-    TokenInfo,
     CreateUser,
     UserRead,
     UserValidation,
@@ -18,7 +17,6 @@ from .service import (
 from . import crud
 from . import security as auth_security
 
-
 router = APIRouter()
 
 
@@ -30,8 +28,15 @@ async def create_user(
     return await crud.create_user(session, user)
 
 
-@router.post("/login/new/", response_model=TokenInfo)
+@router.post("/logout", response_model=dict)
+async def logout(response: Response):
+    response.delete_cookie("access_token")
+    return {"detail": "ok"}
+
+
+@router.post("/login", response_model=dict)
 async def auth_user_jwt(
+    response: Response,
     user: UserValidation = Depends(validate_auth_user),
 ):
     jwt_token = {
@@ -40,10 +45,16 @@ async def auth_user_jwt(
         "username": user.username,
     }
     token = auth_security.encode_jwt(jwt_token)
-    return TokenInfo(
-        access_token=token,
-        token_type="bearer",
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
     )
+
+    return {"detail": "ok"}
 
 
 @router.get("/check/user/", response_model=UserRead)
