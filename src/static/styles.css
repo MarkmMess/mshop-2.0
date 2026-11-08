@@ -552,6 +552,37 @@ textarea {
   background: #fffaf5;
 }
 
+.empty-state-inline {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-summary {
+  color: var(--muted);
+  line-height: 1.7;
+}
+
+.profile-summary ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.profile-summary strong {
+  color: var(--text);
+}
+
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.danger-button {
+  border-color: rgba(215, 61, 95, 0.2);
+  color: var(--danger);
+}
+
 .mini-product-item p {
   margin: 8px 0 0;
   color: var(--muted);

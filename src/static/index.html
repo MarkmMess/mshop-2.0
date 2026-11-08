@@ -150,35 +150,51 @@
                 <div class="account-grid">
                   <div class="account-card">
                     <span>Account</span>
-                    <strong>Guest</strong>
+                    <strong id="account-username">Guest</strong>
                   </div>
                   <div class="account-card">
                     <span>Listings</span>
-                    <strong>0</strong>
+                    <strong id="account-listing-count">0</strong>
                   </div>
                   <div class="account-card">
-                    <span>Views</span>
-                    <strong>0</strong>
+                    <span>Profile</span>
+                    <strong id="account-profile-state">No profile</strong>
                   </div>
                 </div>
 
                 <div class="account-content">
                   <div class="account-list">
-                    <h3>Profile</h3>
-                    <ul>
-                      <li>Username: Guest</li>
-                      <li>Location: Not set</li>
-                      <li>Member since: just now</li>
-                    </ul>
+                    <h3>Profile details</h3>
+                    <div id="profile-summary" class="profile-summary">
+                      <p>Create a profile to start selling on PeerMarket.</p>
+                    </div>
                   </div>
 
                   <div class="account-list">
-                    <h3>Quick actions</h3>
-                    <ul>
-                      <li>Post a new listing</li>
-                      <li>Update profile details</li>
-                      <li>Manage saved searches</li>
-                    </ul>
+                    <h3>Manage profile</h3>
+                    <form id="profile-form" class="stacked-form account-form">
+                      <label>
+                        First name
+                        <input name="first_name" type="text" placeholder="Your first name" required />
+                      </label>
+                      <label>
+                        Last name
+                        <input name="last_name" type="text" placeholder="Optional last name" />
+                      </label>
+                      <label>
+                        Mobile
+                        <input name="mobile" type="tel" placeholder="+375291234567 or 80291234567" />
+                      </label>
+                      <label>
+                        Bio
+                        <textarea name="bio" rows="3" placeholder="Tell buyers a little about yourself"></textarea>
+                      </label>
+                      <div class="profile-actions">
+                        <button type="submit" class="primary-button">Save profile</button>
+                        <button id="delete-profile-button" type="button" class="ghost-button danger-button">Delete profile</button>
+                      </div>
+                    </form>
+                    <div id="profile-status" class="status-box" aria-live="polite"></div>
                   </div>
                 </div>
               </div>
@@ -186,12 +202,10 @@
               <div class="account-view" data-account-view="products">
                 <div class="account-list">
                   <h3>My products</h3>
-                  <div class="mini-product-list">
-                    <div class="mini-product-item">
-                      <div>
-                        <strong>No products yet</strong>
-                        <p>List your first item and it will appear here.</p>
-                      </div>
+                  <div id="my-products-list" class="mini-product-list">
+                    <div class="mini-product-item empty-state-inline">
+                      <strong>No products yet</strong>
+                      <p>List your first item and it will appear here.</p>
                     </div>
                   </div>
                 </div>
@@ -304,6 +318,6 @@
       </div>
     </div>
 
-    <script src="/static/app.js?v=peer-market-2026-10-10"></script>
+    <script src="/static/app.js?v=peer-market-cookie-auth-2026-11-08"></script>
   </body>
 </html>

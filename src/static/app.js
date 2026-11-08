@@ -1,6 +1,8 @@
 const state = {
-  token: localStorage.getItem('mshop_token') || '',
-  username: localStorage.getItem('mshop_user') || 'Guest',
+  isAuthenticated: false,
+  username: 'Guest',
+  profile: null,
+  userProducts: [],
 };
 
 const loginForm = document.querySelector('#login-form');
@@ -30,6 +32,13 @@ const authTabs = document.querySelectorAll('.auth-tab');
 const authForms = document.querySelectorAll('.auth-form');
 const accountDashboard = document.querySelector('#account-dashboard');
 const accountLogoutButton = document.querySelector('#account-logout');
+const profileForm = document.querySelector('#profile-form');
+const profileStatus = document.querySelector('#profile-status');
+const deleteProfileButton = document.querySelector('#delete-profile-button');
+const myProductsList = document.querySelector('#my-products-list');
+const accountUsername = document.querySelector('#account-username');
+const accountListingCount = document.querySelector('#account-listing-count');
+const accountProfileState = document.querySelector('#account-profile-state');
 const accountViewButtons = document.querySelectorAll('.account-nav');
 const accountViews = document.querySelectorAll('.account-view');
 const accountProductForm = document.querySelector('#account-product-form');
@@ -222,38 +231,260 @@ function renderAccountDashboard() {
     return;
   }
 
-  const isLoggedIn = Boolean(state.token);
+  const isLoggedIn = state.isAuthenticated;
+
+  if (accountUsername) {
+    accountUsername.textContent = escapeHtml(state.username || 'Seller');
+  }
+
+  if (accountListingCount) {
+    accountListingCount.textContent = String(state.userProducts.length || 0);
+  }
+
+  if (accountProfileState) {
+    accountProfileState.textContent = state.profile ? 'Ready' : 'No profile';
+  }
 
   if (!isLoggedIn) {
-    accountDashboard.innerHTML = '<div class="account-skeleton"><p>Please sign in to see your dashboard.</p></div>';
+    const summary = document.querySelector('#profile-summary');
+    if (summary) {
+      summary.innerHTML = '<p>Please sign in to see your dashboard.</p>';
+    }
+
+    if (myProductsList) {
+      myProductsList.innerHTML = '<div class="mini-product-item empty-state-inline"><strong>Sign in to manage listings</strong><p>Your products will appear here after you log in.</p></div>';
+    }
+
+    if (profileForm) {
+      profileForm.reset();
+    }
+
+    if (accountUsername) {
+      accountUsername.textContent = 'Guest';
+    }
+
+    if (accountListingCount) {
+      accountListingCount.textContent = '0';
+    }
+
+    if (accountProfileState) {
+      accountProfileState.textContent = 'No profile';
+    }
+
     return;
   }
 
-  const userLabel = escapeHtml(state.username || 'Seller');
+  const summary = document.querySelector('#profile-summary');
+  if (summary) {
+    if (!state.profile) {
+      summary.innerHTML = '<p>No profile yet. Add your name and contact details to start selling.</p>';
+      return;
+    }
 
-  const accountName = document.querySelector('[data-account-view="profile"] strong');
-  if (accountName) {
-    accountName.textContent = userLabel;
+    const rawMobile = state.profile.mobile || 'Not set';
+    const rawBio = state.profile.bio || 'No bio yet.';
+
+    summary.innerHTML = `
+      <ul>
+        <li><strong>Name:</strong> ${escapeHtml(`${state.profile.first_name || ''} ${state.profile.last_name || ''}`.trim() || 'Not set')}</li>
+        <li><strong>Mobile:</strong> ${escapeHtml(rawMobile)}</li>
+        <li><strong>Bio:</strong> ${escapeHtml(rawBio)}</li>
+      </ul>
+    `;
   }
 
-  const productCount = document.querySelector('[data-account-view="profile"] .account-card:nth-child(2) strong');
-  if (productCount) {
-    productCount.textContent = '0';
+  if (profileForm) {
+    const profile = state.profile || {};
+    profileForm.querySelector('[name="first_name"]').value = profile.first_name || '';
+    profileForm.querySelector('[name="last_name"]').value = profile.last_name || '';
+    profileForm.querySelector('[name="mobile"]').value = profile.mobile || '';
+    profileForm.querySelector('[name="bio"]').value = profile.bio || '';
+  }
+}
+
+function renderProfileSummary(profile) {
+  const summary = document.querySelector('#profile-summary');
+  if (!summary) {
+    return;
   }
 
-  const viewCount = document.querySelector('[data-account-view="profile"] .account-card:nth-child(3) strong');
-  if (viewCount) {
-    viewCount.textContent = '0';
+  if (!profile) {
+    summary.innerHTML = '<p>No profile yet. Add your first name and contact details to start selling.</p>';
+    return;
   }
 
-  const profileText = document.querySelector('[data-account-view="profile"] .account-list li');
-  if (profileText) {
-    profileText.textContent = `Username: ${userLabel}`;
+  summary.innerHTML = `
+    <ul>
+      <li><strong>Name:</strong> ${escapeHtml(`${profile.first_name || ''} ${profile.last_name || ''}`.trim() || 'Not set')}</li>
+      <li><strong>Mobile:</strong> ${escapeHtml(profile.mobile || 'Not set')}</li>
+      <li><strong>Bio:</strong> ${escapeHtml(profile.bio || 'No bio yet.')}</li>
+    </ul>
+  `;
+}
+
+async function loadMyProducts() {
+  if (!state.isAuthenticated) {
+    state.userProducts = [];
+    if (accountListingCount) {
+      accountListingCount.textContent = '0';
+    }
+    if (myProductsList) {
+      myProductsList.innerHTML = '<div class="mini-product-item empty-state-inline"><strong>Sign in to manage listings</strong><p>Your products will appear here after you log in.</p></div>';
+    }
+    return [];
+  }
+
+  try {
+    const profile = state.profile || (await apiRequest('/api/v1/profile/profile'));
+    if (!profile?.user_id) {
+      throw new Error('No profile available');
+    }
+
+    const items = await apiRequest(`/api/v1/products/users/${profile.user_id}`);
+    state.userProducts = Array.isArray(items) ? items : [];
+
+    if (accountListingCount) {
+      accountListingCount.textContent = String(state.userProducts.length);
+    }
+
+    if (!state.userProducts.length && myProductsList) {
+      myProductsList.innerHTML = '<div class="mini-product-item empty-state-inline"><strong>No products yet</strong><p>List your first item and it will appear here.</p></div>';
+      return [];
+    }
+
+    if (myProductsList) {
+      myProductsList.innerHTML = state.userProducts
+        .map(
+          (product) => `
+            <div class="mini-product-item">
+              <div>
+                <strong>${escapeHtml(product.name || 'Untitled item')}</strong>
+                <p>${escapeHtml(product.description || 'No description provided.')}</p>
+              </div>
+            </div>
+          `
+        )
+        .join('');
+    }
+
+    return state.userProducts;
+  } catch (error) {
+    state.userProducts = [];
+    if (accountListingCount) {
+      accountListingCount.textContent = '0';
+    }
+    if (myProductsList) {
+      myProductsList.innerHTML = '<div class="mini-product-item empty-state-inline"><strong>No products yet</strong><p>List your first item and it will appear here.</p></div>';
+    }
+    return [];
+  }
+}
+
+async function loadAccountData() {
+  if (!state.isAuthenticated) {
+    state.profile = null;
+    state.userProducts = [];
+    renderAccountDashboard();
+    return null;
+  }
+
+  try {
+    state.profile = await apiRequest('/api/v1/profile/profile');
+  } catch (error) {
+    state.profile = null;
+  }
+
+  renderAccountDashboard();
+  await loadMyProducts();
+  return state.profile;
+}
+
+async function saveProfile(event) {
+  event.preventDefault();
+
+  if (!state.isAuthenticated) {
+    setStatus(profileStatus, 'Please sign in to create a profile.', 'error');
+    showToast('Please sign in to create a profile.', 'error');
+    return;
+  }
+
+  const formData = new FormData(profileForm);
+  const payload = {
+    first_name: String(formData.get('first_name') || '').trim(),
+    last_name: String(formData.get('last_name') || '').trim() || null,
+    bio: String(formData.get('bio') || '').trim() || null,
+    mobile: String(formData.get('mobile') || '').trim() || null,
+  };
+
+  if (!payload.first_name) {
+    setStatus(profileStatus, 'First name is required.', 'error');
+    showToast('First name is required.', 'error');
+    return;
+  }
+
+  try {
+    if (state.profile) {
+      await apiRequest('/api/v1/profile/profile/update', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      });
+      setStatus(profileStatus, 'Profile updated successfully.', 'success');
+      showToast('Profile updated successfully', 'success');
+    } else {
+      await apiRequest('/api/v1/profile/create', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      });
+      setStatus(profileStatus, 'Profile created successfully.', 'success');
+      showToast('Profile created successfully', 'success');
+    }
+
+    state.profile = await apiRequest('/api/v1/profile/profile');
+    renderProfileSummary(state.profile);
+    renderAccountDashboard();
+    await loadMyProducts();
+    profileForm.reset();
+    if (state.profile) {
+      const profile = state.profile;
+      profileForm.querySelector('[name="first_name"]').value = profile.first_name || '';
+      profileForm.querySelector('[name="last_name"]').value = profile.last_name || '';
+      profileForm.querySelector('[name="mobile"]').value = profile.mobile || '';
+      profileForm.querySelector('[name="bio"]').value = profile.bio || '';
+    }
+  } catch (error) {
+    const message = getErrorMessage(error, 'Unable to save profile.');
+    setStatus(profileStatus, message, 'error');
+    showToast(message, 'error');
+  }
+}
+
+async function deleteProfile() {
+  if (!state.isAuthenticated) {
+    setStatus(profileStatus, 'Please sign in to delete your profile.', 'error');
+    showToast('Please sign in to delete your profile.', 'error');
+    return;
+  }
+
+  try {
+    await apiRequest('/api/v1/profile/delete', {
+      method: 'DELETE',
+    });
+    state.profile = null;
+    state.userProducts = [];
+    profileForm.reset();
+    renderAccountDashboard();
+    await loadMyProducts();
+    showToast('Profile deleted successfully', 'success');
+    setStatus(profileStatus, 'Profile deleted successfully.', 'success');
+  } catch (error) {
+    const message = getErrorMessage(error, 'Unable to delete profile.');
+    setStatus(profileStatus, message, 'error');
+    showToast(message, 'error');
   }
 }
 
 function setAuthState() {
-  const isLoggedIn = Boolean(state.token);
+  const isLoggedIn = state.isAuthenticated;
   const productSubmitButton = document.querySelector('#product-form button[type="submit"]');
 
   if (loginOpenButton) {
@@ -284,12 +515,38 @@ function setAuthState() {
 
   renderAccountDashboard();
 
+  if (isLoggedIn) {
+    void loadAccountData();
+  }
+
   if (!isLoggedIn) {
     setStatus(authStatus, 'Log in to browse products and create listings.', '');
     if (productStatus) {
       setStatus(productStatus, 'Please sign in before creating a product.', 'error');
     }
   }
+}
+
+async function loadCurrentUser() {
+  const user = await apiRequest('/api/v1/auth/check/user/');
+  state.isAuthenticated = true;
+  state.username = user.username || 'Seller';
+  return user;
+}
+
+async function initializeApp() {
+  localStorage.removeItem('mshop_token');
+  localStorage.removeItem('mshop_user');
+
+  try {
+    await loadCurrentUser();
+  } catch (error) {
+    state.isAuthenticated = false;
+    state.username = 'Guest';
+  }
+
+  setAuthState();
+  await loadProducts();
 }
 
 async function apiRequest(url, options = {}) {
@@ -301,13 +558,10 @@ async function apiRequest(url, options = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  if (state.token) {
-    headers.Authorization = `Bearer ${state.token}`;
-  }
-
   const response = await fetch(url, {
     ...options,
     headers,
+    credentials: 'same-origin',
   });
 
   const contentType = response.headers.get('content-type') || '';
@@ -494,32 +748,16 @@ async function loginUser(event) {
   const password = formData.get('password');
 
   try {
-    const response = await fetch('/api/v1/auth/login/new/', {
+    await apiRequest('/api/v1/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
       },
       body: new URLSearchParams({ username, password }),
     });
+    await loadCurrentUser();
 
-    let body = null;
-    try {
-      body = await response.json();
-    } catch {
-      body = null;
-    }
-
-    if (!response.ok) {
-      const errorMessage = extractApiErrorMessage(body, 'Incorrect credentials');
-      throw new Error(errorMessage);
-    }
-
-    state.token = body.access_token;
-    state.username = username;
-    localStorage.setItem('mshop_token', state.token);
-    localStorage.setItem('mshop_user', state.username);
-
-    setStatus(authStatus, `Signed in as ${username}.`, 'success');
+    setStatus(authStatus, `Signed in as ${state.username}.`, 'success');
     showToast('Signed in successfully', 'success');
     closeAuthModal();
     setAuthState();
@@ -556,10 +794,14 @@ async function createUser(event) {
       method: 'POST',
       body: JSON.stringify(payload),
     });
-    setStatus(authStatus, 'Account created successfully. You can sign in now.', 'success');
+    await loadCurrentUser();
+    setAuthState();
+    setStatus(authStatus, 'Account created and signed in.', 'success');
     showToast('Account created successfully', 'success');
     signupForm.reset();
-    setAuthForm('login');
+    closeAuthModal();
+    await loadProducts();
+    selectTab('account');
   } catch (error) {
     const message = getErrorMessage(error, 'Unable to create account.');
     setStatus(authStatus, message, 'error');
@@ -586,7 +828,7 @@ async function resetPassword(event) {
 async function createProduct(event) {
   event.preventDefault();
 
-  if (!state.token) {
+  if (!state.isAuthenticated) {
     setStatus(productStatus, 'Please sign in before creating a product.', 'error');
     showToast('Please sign in before creating a product.', 'error');
     return;
@@ -631,14 +873,23 @@ function closeProductDetailModal() {
   productDetailModal.setAttribute('aria-hidden', 'true');
 }
 
-function logout() {
-  state.token = '';
+async function logout() {
+  let logoutError = null;
+  try {
+    await apiRequest('/api/v1/auth/logout', { method: 'POST' });
+  } catch (error) {
+    logoutError = error;
+  }
+
+  state.isAuthenticated = false;
   state.username = 'Guest';
-  localStorage.removeItem('mshop_token');
+  state.profile = null;
+  state.userProducts = [];
   localStorage.removeItem('mshop_user');
-  setStatus(authStatus, 'You have been logged out.', '');
-  showToast('You have been logged out', 'success');
+  setStatus(authStatus, logoutError ? getErrorMessage(logoutError, 'Unable to log out.') : 'You have been logged out.', logoutError ? 'error' : '');
+  showToast(logoutError ? getErrorMessage(logoutError, 'Unable to log out.') : 'You have been logged out', logoutError ? 'error' : 'success');
   setAuthState();
+  renderAccountDashboard();
   selectTab('home');
 }
 
@@ -710,6 +961,8 @@ signupForm.addEventListener('submit', createUser);
 resetForm.addEventListener('submit', resetPassword);
 productForm.addEventListener('submit', createProduct);
 accountProductForm.addEventListener('submit', createProduct);
+profileForm?.addEventListener('submit', saveProfile);
+deleteProfileButton?.addEventListener('click', deleteProfile);
 logoutButton.addEventListener('click', logout);
 accountLogoutButton.addEventListener('click', logout);
 loginOpenButton.addEventListener('click', () => openAuthModal('login'));
@@ -750,7 +1003,6 @@ searchForm?.addEventListener('submit', (event) => {
 });
 
 bindAuthTabs();
-setAuthState();
 setAccountView('profile');
 selectTab('home');
-loadProducts();
+void initializeApp();
