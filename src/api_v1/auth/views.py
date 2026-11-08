@@ -13,9 +13,9 @@ from .service import (
     validate_auth_user,
     get_current_active_auth_user,
     get_public_user,
+    set_auth_cookie,
 )
 from . import crud
-from . import security as auth_security
 
 router = APIRouter()
 
@@ -23,8 +23,11 @@ router = APIRouter()
 @router.post("/signIn", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def create_user(
     user: CreateUser,
+    response: Response,
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ) -> UserRead:
+    user = await crud.create_user(session, user)
+    set_auth_cookie(response, user.id, user.username)
     return await crud.create_user(session, user)
 
 
@@ -39,21 +42,7 @@ async def auth_user_jwt(
     response: Response,
     user: UserValidation = Depends(validate_auth_user),
 ):
-    jwt_token = {
-        # subject
-        "sub": str(user.id),
-        "username": user.username,
-    }
-    token = auth_security.encode_jwt(jwt_token)
-
-    response.set_cookie(
-        key="access_token",
-        value=token,
-        httponly=True,
-        secure=True,
-        samesite="none",
-    )
-
+    set_auth_cookie(response, user.id, user.username)
     return {"detail": "ok"}
 
 

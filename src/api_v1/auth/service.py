@@ -1,4 +1,4 @@
-from fastapi import Depends, Form
+from fastapi import Depends, Form, Response
 from fastapi.security import APIKeyCookie
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,6 +10,21 @@ from .schemas import UserRead, UserPublicRead, UserValidation
 import api_v1.auth.security as auth_security
 
 acces_cookie = APIKeyCookie(name="access_token", auto_error=False)
+
+
+def set_auth_cookie(response: Response, user_id: int, username: str) -> None:
+    jwt_token = {
+        "sub": str(user_id),
+        "username": username,
+    }
+    token = auth_security.encode_jwt(jwt_token)
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+    )
 
 
 async def validate_auth_user(
