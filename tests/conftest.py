@@ -21,7 +21,6 @@ from api_v1.auth.security import hash_password, encode_jwt
 from main import main_app
 from models import db_helper
 
-
 test_engine = create_async_engine(
     str(settings.db.url),
     # echo=True,
@@ -47,6 +46,7 @@ async def create_tables():
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
+
 @pytest_asyncio.fixture(scope="function")
 async def session():
     async with TestSessionLocal() as session:
@@ -60,10 +60,9 @@ async def client(session: AsyncSession):
     async def override_session():
         yield session
 
-    main_app.dependency_overrides[
-        db_helper.scoped_session_dependency
-    ] = override_session
-
+    main_app.dependency_overrides[db_helper.scoped_session_dependency] = (
+        override_session
+    )
 
     transport = ASGITransport(app=main_app)
 
@@ -103,6 +102,7 @@ async def create_user(
 
     yield user
 
+
 @pytest_asyncio.fixture
 async def get_jwt_token(create_user: User):
     jwt_token = {
@@ -115,11 +115,11 @@ async def get_jwt_token(create_user: User):
 
 @pytest_asyncio.fixture
 async def get_user_jwt(
-        user_data: dict,
+    user_data: dict,
 ):
     jwt_token = {
-        "sub": '1',
-        "username": user_data['username'],
+        "sub": "1",
+        "username": user_data["username"],
     }
     token = encode_jwt(jwt_token)
     yield token
