@@ -60,8 +60,6 @@ poetry install
 
 ### 2. Create a secret for JWT
 
-### 2. Create a secret for JWT
-
 Generate a random secret:
 
 ```bash
@@ -211,5 +209,6 @@ poetry run alembic upgrade head
 - Alembic
 - JWT (HS256)
 - Poetry
+- Pytest
 - Docker Compose
 - Uvicorn
