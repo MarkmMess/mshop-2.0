@@ -5,64 +5,64 @@ from .fixtures import *
 
 @pytest.mark.asyncio
 async def test_create_product(
-        client: AsyncClient,
-        get_jwt_token,
-        product_data,
-        create_profile,
+    client: AsyncClient,
+    get_jwt_token,
+    product_data,
+    create_profile,
 ):
 
     response = await client.post(
         "/products/new",
         json=product_data,
-        headers={"Authorization": f"Bearer {get_jwt_token}"},
-        )
+        cookies={"access_token": get_jwt_token},
+    )
     assert response.status_code == 201
 
 
 @pytest.mark.asyncio
 async def test_error_create_product(
-        client: AsyncClient,
-        get_jwt_token,
-        product_data,
+    client: AsyncClient,
+    get_jwt_token,
+    product_data,
 ):
 
     response = await client.post(
         "/products/new",
         json=product_data,
-        headers={"Authorization": f"Bearer {get_jwt_token}"},
-        )
+        cookies={"access_token": get_jwt_token},
+    )
     assert response.status_code == 403
 
 
 @pytest.mark.asyncio
 async def test_get_products(
-        client: AsyncClient,
-        create_product,
+    client: AsyncClient,
+    create_product,
 ):
     response = await client.get(
         "products/products?page=1&size=50",
     )
     assert response.status_code == 200
-    assert response.json()['items'] != []
+    assert response.json()["items"] != []
 
 
 @pytest.mark.asyncio
 async def test_get_product(
-        client: AsyncClient,
-        create_product,
-        product_data,
+    client: AsyncClient,
+    create_product,
+    product_data,
 ):
     response = await client.get(
         "products/1",
     )
     assert response.status_code == 200
-    assert response.json()['name'] == 'product'
+    assert response.json()["name"] == "product"
 
 
 @pytest.mark.asyncio
 async def test_get_user_products(
-        client: AsyncClient,
-        create_product,
+    client: AsyncClient,
+    create_product,
 ):
     response = await client.get(
         "products/users/1",
@@ -73,30 +73,30 @@ async def test_get_user_products(
 
 @pytest.mark.asyncio
 async def test_update_full_product(
-        client: AsyncClient,
-        create_product,
-        get_user_jwt,
-        product_data,
+    client: AsyncClient,
+    create_product,
+    get_user_jwt,
+    product_data,
 ):
-    product_data['name'] = 'newname'
+    product_data["name"] = "newname"
     response = await client.put(
         "products/1",
         json=product_data,
-        headers={"Authorization": f"Bearer {get_user_jwt}"}
+        cookies={"access_token": get_user_jwt},
     )
     assert response.status_code == 200
 
-    assert response.json()['name'] == 'newname'
+    assert response.json()["name"] == "newname"
 
 
 @pytest.mark.asyncio
 async def test_delete_product(
-        client: AsyncClient,
-        create_product,
-        get_jwt_token,
+    client: AsyncClient,
+    create_product,
+    get_jwt_token,
 ):
     response = await client.delete(
         "products/1",
-        headers={"Authorization": f"Bearer {get_jwt_token}"},
+        cookies={"access_token": get_jwt_token},
     )
     assert response.status_code == 204
