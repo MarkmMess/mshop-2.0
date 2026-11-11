@@ -2,46 +2,93 @@
 
 A marketplace-style backend with FastAPI, SQLAlchemy, PostgreSQL, JWT auth, and a lightweight frontend served from the app itself.
 
+Works on Windows, macOS, and Linux.
+
 ---
 
 ## Requirements
 
-- Docker Desktop or Docker Engine
-- Docker Compose
-- Python 3.13+ recommended
-- Poetry
-- OpenSSL (or Python, to generate the JWT secret)
+- Docker Desktop (Windows / macOS) or Docker Engine (Linux)
+- Docker Compose (included in Docker Desktop)
+- Python 3.13+ (only needed for local development and for generating the JWT secret)
+- Poetry (only needed for local development)
+
+> **Note:** OpenSSL is **not** required. The JWT secret is generated with Python.
+
+### Which Python command do I use?
+
+| OS | Command |
+|---|---|
+| Windows | `py` (or `python`) |
+| macOS / Linux | `python3` (or `python`) |
+
+The examples below use `python`. Replace it with the command that works on your system.
+
+---
+
+## Step 0. Create the `.env` file (all OSes)
+
+Pick the command for your shell:
+
+**Windows (PowerShell):**
+```powershell
+Copy-Item .env.example .env
+```
+
+**Windows (cmd):**
+```bat
+copy .env.example .env
+```
+
+**macOS / Linux / Git Bash:**
+```bash
+cp .env.example .env
+```
+
+Or just copy the file manually in your file manager and rename the copy to `.env`.
+
+## Step 1. Generate a JWT secret (all OSes)
+
+Run this one-liner (same on every OS):
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+Copy the printed string and put it into `.env`:
+
+```env
+APP_AUTH_JWT__SECRET=<generated string>
+```
+
+Alternatives (optional):
+
+- macOS / Linux / Git Bash: `openssl rand -base64 32`
+- Windows PowerShell (no OpenSSL needed):
+  ```powershell
+  [Convert]::ToBase64String((1..32 | ForEach-Object { Get-Random -Maximum 256 }))
+  ```
 
 ---
 
 ## Run with Docker
 
-This is the simplest way to start the full app.
+The simplest way to start the full app. Complete **Step 0** and **Step 1** first.
 
-### 1. Copy environment variables
-
-```bash
-cp .env.example .env
-```
-
-Generate a JWT secret and put it into `.env`:
-
-```bash
-openssl rand -base64 32
-```
-
-### 2. Start the app and PostgreSQL
+### 1. Start the app and PostgreSQL
 
 ```bash
 docker compose up -d --build
 ```
 
-### 3. Open the app
+> Older Docker installs may need `docker-compose` (with a hyphen) instead of `docker compose`.
+
+### 2. Open the app
 
 - Frontend: http://localhost:8000/
 - API docs: http://localhost:8000/docs
 
-### 4. Stop it
+### 3. Stop it
 
 ```bash
 docker compose down
@@ -51,79 +98,71 @@ docker compose down
 
 ## Local development
 
+Complete **Step 0** and **Step 1** first.
+
 ### 1. Install dependencies
 
 ```bash
-pip install poetry
-poetry install
+python -m pip install poetry
+python -m poetry install
 ```
 
-### 2. Create a secret for JWT
+> Using `python -m poetry` works even if the `poetry` command is not in your PATH (common on Windows).
 
-Generate a random secret:
-
-```bash
-openssl rand -base64 32
-```
-
-Copy `.env.example` to `.env` and paste the result into it:
-
-```bash
-cp .env.example .env
-```
-
-```env
-APP_AUTH_JWT__SECRET=<generated string>
-```
-
-### 3. Start the database only
+### 2. Start the database only
 
 ```bash
 docker compose up -d db
 ```
 
-### 4. Run the app
-
-From project root:
+### 3. Apply migrations
 
 ```bash
-poetry run uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
+python -m poetry run alembic upgrade head
+```
+
+### 4. Run the app
+
+From the project root:
+
+```bash
+python -m poetry run uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
 ```
 
 Or use the app entrypoint:
 
 ```bash
-python src/main.py
+python -m poetry run python src/main.py
 ```
 
 ---
 
 ## Run tests
 
-The test suite uses the dedicated PostgreSQL container in [docker-compose.test.yml](docker-compose.test.yml).
+The test suite uses the dedicated PostgreSQL container from [docker-compose.test.yml](docker-compose.test.yml).
 
-Start the test database first:
+Start the test database:
 
 ```bash
 docker compose -f docker-compose.test.yml up -d
 ```
 
-Then run the tests:
+Run the tests:
 
 ```bash
-pytest
+python -m poetry run pytest
 ```
 
 ### Run one file
 
 ```bash
-pytest tests/auth/test_api.py
+python -m poetry run pytest tests/auth/test_api.py
 ```
 
 ### Run one test
 
 ```bash
-pytest tests/auth/test_api.py -k create_user
+python -m poetry run pytest tests/auth/test_api.py -k create_user
 ```
 
 ### Stop the test database
@@ -136,58 +175,68 @@ docker compose -f docker-compose.test.yml down
 
 ## Common fixes
 
-### 1. `ModuleNotFoundError` or missing packages
+### 1. `cp` / `openssl` is not recognized (Windows)
+
+These are Unix tools. Use the cross-platform commands from **Step 0** and **Step 1** instead (`Copy-Item` / `copy` and the Python one-liner).
+
+### 2. `python` / `poetry` is not recognized
+
+- Windows: try `py` instead of `python`, and use `py -m poetry ...`.
+- macOS / Linux: try `python3`.
+- Make sure Python was installed with "Add Python to PATH" checked (Windows).
+
+### 3. `ModuleNotFoundError` or missing packages
 
 ```bash
-poetry install
+python -m poetry install
 ```
 
-### 2. `Connection refused` to PostgreSQL
+### 4. `Connection refused` to PostgreSQL
 
-Start the database:
+Start the database and verify it is running:
 
 ```bash
 docker compose up -d db
-```
-
-Then verify:
-
-```bash
 docker compose ps
 ```
 
-### 3. JWT secret is missing
+On Windows / macOS make sure Docker Desktop is running.
 
-If the app fails on startup with a settings validation error, `.env` has no JWT secret. Generate one and add it:
+### 5. JWT secret is missing
 
-```bash
-openssl rand -base64 32
-```
+If the app fails on startup with a settings validation error, `.env` has no JWT secret. Generate one (see Step 1) and add it:
 
 ```env
 APP_AUTH_JWT__SECRET=<generated string>
 ```
 
-### 4. App starts but frontend looks outdated in Safari
+Make sure the file is named exactly `.env` (not `.env.txt`). On Windows, enable "File name extensions" in Explorer to check.
 
-This is a cache problem. The app now sends no-store headers and versioned asset URLs. Hard-refresh once:
+### 6. Frontend looks outdated
 
-- Safari: Command + Option + R
-- Or open Dev Tools and empty caches
+This is a browser cache problem. Hard-refresh once:
 
-### 5. `uvicorn` cannot find `src.main`
+- Windows / Linux: `Ctrl + Shift + R`
+- macOS Chrome / Firefox: `Cmd + Shift + R`
+- macOS Safari: `Cmd + Option + R`
 
-Run from the project root, not inside the `src` folder:
+### 7. `uvicorn` cannot find `src.main`
 
-```bash
-poetry run uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
-```
-
-### 6. Migrations not applied
+Run from the project root, not from inside `src`:
 
 ```bash
-poetry run alembic upgrade head
+python -m poetry run uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
 ```
+
+### 8. Migrations not applied
+
+```bash
+python -m poetry run alembic upgrade head
+```
+
+### 9. Port 8000 or 5432 is already in use
+
+Stop the other program using the port, or change the port mapping in `docker-compose.yml`.
 
 ---
 
