@@ -1,9 +1,11 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import Optional
+from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from models import Product
 
 
 class ProductBase(BaseModel):
@@ -11,7 +13,9 @@ class ProductBase(BaseModel):
     description: Optional[str] = Field(None, max_length=1000)
     price: Decimal = Field(gt=0, decimal_places=2, max_digits=10)
     category_name: Optional[str] = Field(None, max_length=50)
-    quantity: Optional[int] = Field(None, gt=0, description="Quantity must be greater than 0")
+    quantity: Optional[int] = Field(
+        None, gt=0, description="Quantity must be greater than 0"
+    )
 
 
 class ProductCreate(ProductBase):
@@ -50,3 +54,15 @@ class ProductRet(BaseModel):
             datetime: lambda v: v.isoformat(),
         },
     )
+
+
+class SortOrder(StrEnum):
+    asc = "asc"
+    desc = "desc"
+
+
+sort_dict = {
+    "name": Product.name,
+    "created": Product.created_at,
+    "price": Product.price,
+}

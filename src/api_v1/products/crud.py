@@ -6,22 +6,47 @@ from fastapi_pagination.ext.sqlalchemy import apaginate
 
 from .dependencies import check_quantity, check_create_product_permission
 from .errors import not_found
-from .schemas import ProductCreate, ProductUpdate, ProductUpdatePartial, ProductRet
+from .schemas import (
+    ProductCreate,
+    ProductUpdate,
+    ProductUpdatePartial,
+    ProductRet,
+    SortOrder,
+    sort_dict,
+)
 from models.product import Product
 from ..categories.service import check_category
 
 
-async def get_products(session: AsyncSession, params: Params) -> Page[ProductRet]:
-    stmt = select(Product).order_by(Product.created_at.desc())
+async def get_products(
+    session: AsyncSession, params: Params, sort_by: str | None, order_by: SortOrder
+) -> Page[ProductRet]:
+    if sort_by is None:
+        stmt = select(Product).order_by(Product.created_at.desc())
+    else:
+        sort = sort_dict.get(sort_by)
+        stmt = select(Product).order_by(
+            sort.asc() if order_by == SortOrder.asc else sort.desc()
+        )
     return await apaginate(session, stmt, params=params)
 
 
-async def get_products_by_user(session: AsyncSession, user_id: int) -> list[ProductRet]:
-    stmt = (
-        select(Product)
-        .order_by(Product.created_at.desc())
-        .where(Product.user_id == user_id)
-    )
+async def get_products_by_user(
+    session: AsyncSession, user_id: int, sort_by: str | None, order_by: SortOrder
+) -> list[ProductRet]:
+    if sort_by is None:
+        stmt = (
+            select(Product)
+            .order_by(Product.created_at.desc())
+            .where(Product.user_id == user_id)
+        )
+    else:
+        sort = sort_dict.get(sort_by)
+        stmt = (
+            select(Product)
+            .order_by(sort.asc() if order_by == SortOrder.asc else sort.desc())
+            .where(Product.user_id == user_id)
+        )
     result: Result = await session.execute(stmt)
     products = result.scalars().all()
     if not products:

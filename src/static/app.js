@@ -3,6 +3,16 @@ const state = {
   username: 'Guest',
   profile: null,
   userProducts: [],
+  activeTab: 'home',
+  sellerProfileUserId: null,
+  sellerProfileReturnTab: 'shop',
+  sellerProfileReturnProductId: null,
+  productSortBy: 'created',
+  productSortOrder: 'desc',
+  userProductSortBy: 'created',
+  userProductSortOrder: 'desc',
+  sellerProductSortBy: 'created',
+  sellerProductSortOrder: 'desc',
 };
 
 const loginForm = document.querySelector('#login-form');
@@ -47,6 +57,18 @@ const productDetailModal = document.querySelector('#product-detail-modal');
 const productDetailContent = document.querySelector('#product-detail-content');
 const toastContainer = document.querySelector('#toast-container');
 const sellerNameCache = new Map();
+const sellerProfileCache = new Map();
+const productSortByControls = document.querySelectorAll('.product-sort-by');
+const productSortOrderControls = document.querySelectorAll('.product-sort-order');
+const userProductSortByControl = document.querySelector('#user-products-sort-by');
+const userProductSortOrderControl = document.querySelector('#user-products-sort-order');
+const sellerProfileName = document.querySelector('#seller-profile-name');
+const sellerProfileSummary = document.querySelector('#seller-profile-summary');
+const sellerProfileListingsHeading = document.querySelector('#seller-profile-listings-heading');
+const sellerProductsGrid = document.querySelector('#seller-products-grid');
+const sellerProfileBackButton = document.querySelector('#seller-profile-back');
+const sellerProductSortByControl = document.querySelector('#seller-product-sort-by');
+const sellerProductSortOrderControl = document.querySelector('#seller-product-sort-order');
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -163,6 +185,7 @@ function validatePasswordStrength(password) {
 }
 
 function selectTab(tabName) {
+  state.activeTab = tabName;
   const visibleTabButtons = document.querySelectorAll('.tab-button');
   visibleTabButtons.forEach((button) => {
     button.classList.toggle('active', button.dataset.tab === tabName);
@@ -340,7 +363,11 @@ async function loadMyProducts() {
       throw new Error('No profile available');
     }
 
-    const items = await apiRequest(`/api/v1/products/users/${profile.user_id}`);
+    const params = new URLSearchParams({
+      sort_by: state.userProductSortBy,
+      order_by: state.userProductSortOrder,
+    });
+    const items = await apiRequest(`/api/v1/products/users/${profile.user_id}?${params}`);
     state.userProducts = Array.isArray(items) ? items : [];
 
     if (accountListingCount) {
@@ -374,7 +401,7 @@ async function loadMyProducts() {
       accountListingCount.textContent = '0';
     }
     if (myProductsList) {
-      myProductsList.innerHTML = '<div class="mini-product-item empty-state-inline"><strong>No products yet</strong><p>List your first item and it will appear here.</p></div>';
+      myProductsList.innerHTML = `<div class="mini-product-item empty-state-inline"><strong>Unable to load products</strong><p>${escapeHtml(getErrorMessage(error, 'Please try again.'))}</p></div>`;
     }
     return [];
   }
@@ -618,6 +645,27 @@ async function getSellerName(userId) {
   }
 }
 
+async function getSellerProfile(userId) {
+  if (!userId) {
+    return null;
+  }
+
+  if (sellerProfileCache.has(userId)) {
+    return sellerProfileCache.get(userId);
+  }
+
+  const profileRequest = apiRequest(`/api/v1/profile/profile/${userId}`).catch((error) => {
+    sellerProfileCache.delete(userId);
+    throw error;
+  });
+  sellerProfileCache.set(userId, profileRequest);
+  return profileRequest;
+}
+
+function getTelHref(phone) {
+  return String(phone).replace(/[^\d+]/g, '').replace(/(?!^)\+/g, '');
+}
+
 function renderProducts(items, targetGrid) {
   if (!targetGrid) {
     return;
@@ -681,11 +729,23 @@ async function openProductDetail(productId) {
   try {
     const product = await apiRequest(`/api/v1/products/${productId}`);
     const sellerName = await getSellerName(product.user_id);
+    let sellerProfile = null;
+    let sellerProfileError = false;
+    try {
+      sellerProfile = await getSellerProfile(product.user_id);
+    } catch {
+      sellerProfileError = true;
+    }
+
+    const sellerPhone = sellerProfile?.mobile?.trim();
+    const phoneLink = sellerPhone
+      ? `<a class="phone-link" href="tel:${escapeHtml(getTelHref(sellerPhone))}">Call ${escapeHtml(sellerPhone)}</a>`
+      : `<p>${sellerProfileError ? "Unable to load the seller's phone number. Please try again later." : 'The seller has not shared a phone number.'}</p>`;
 
     productDetailContent.innerHTML = `
       <div class="detail-header">
         <p class="eyebrow accent">Listing details</p>
-        <h2 id="product-detail-title">${escapeHtml(product.name || 'Untitled item')}</h2>
+        <h2 id="detail-modal-title">${escapeHtml(product.name || 'Untitled item')}</h2>
       </div>
       <div class="product-image detail-image" aria-hidden="true"></div>
       <div class="detail-grid">
@@ -706,6 +766,8 @@ async function openProductDetail(productId) {
         <h3>Seller</h3>
         <p><strong>Username:</strong> ${escapeHtml(sellerName)}</p>
         <p><strong>Seller ID:</strong> ${escapeHtml(product.user_id)}</p>
+        ${phoneLink}
+        <button class="link-button" type="button" data-seller-user-id="${escapeHtml(product.user_id)}" data-return-product-id="${escapeHtml(product.id)}">View seller profile and listings</button>
         <p><strong>Category:</strong> ${escapeHtml(product.category_name || 'Other')}</p>
       </div>
     `;
@@ -717,9 +779,141 @@ async function openProductDetail(productId) {
   }
 }
 
+async function openSellerProfile(userId, returnProductId) {
+  if (!userId) {
+    showToast('Unable to open seller profile.', 'error');
+    return;
+  }
+
+  if (state.activeTab !== 'seller-profile') {
+    state.sellerProfileReturnTab = state.activeTab;
+  }
+  state.sellerProfileReturnProductId = returnProductId;
+  state.sellerProfileUserId = userId;
+
+  closeProductDetailModal();
+  selectTab('seller-profile');
+
+  if (sellerProfileName) {
+    sellerProfileName.textContent = 'Loading seller profile...';
+  }
+  if (sellerProfileSummary) {
+    sellerProfileSummary.textContent = 'Loading profile details...';
+  }
+  if (sellerProductsGrid) {
+    sellerProductsGrid.innerHTML = '<div class="empty-state">Loading listings...</div>';
+  }
+  if (sellerProfileListingsHeading) {
+    sellerProfileListingsHeading.textContent = 'Listings';
+  }
+
+  await loadSellerProfile(userId);
+}
+
+async function loadSellerProfile(userId) {
+  const profileRequest = getSellerProfile(userId)
+    .then((profile) => ({ profile, error: null }))
+    .catch((error) => ({ profile: null, error }));
+  const [profileResult, sellerName] = await Promise.all([
+    profileRequest,
+    getSellerName(userId),
+  ]);
+
+  if (state.sellerProfileUserId !== userId) {
+    return;
+  }
+
+  const profile = profileResult.profile;
+  const fullName = `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim();
+  if (sellerProfileName) {
+    sellerProfileName.textContent = fullName || sellerName;
+  }
+  if (sellerProfileSummary) {
+    if (profile) {
+      const sellerPhone = profile.mobile?.trim();
+      const phoneMarkup = sellerPhone
+        ? `<a class="phone-link" href="tel:${escapeHtml(getTelHref(sellerPhone))}">Call ${escapeHtml(sellerPhone)}</a>`
+        : '<p>The seller has not shared a phone number.</p>';
+      sellerProfileSummary.innerHTML = `
+        <ul>
+          <li><strong>Username:</strong> ${escapeHtml(sellerName)}</li>
+          <li><strong>Name:</strong> ${escapeHtml(fullName || 'Not provided')}</li>
+          <li><strong>Bio:</strong> ${escapeHtml(profile.bio || 'No bio provided.')}</li>
+        </ul>
+        ${phoneMarkup}
+      `;
+    } else {
+      const message = profileResult.error
+        ? `Unable to load profile details: ${getErrorMessage(profileResult.error, 'Please try again.')}`
+        : 'This seller has not added profile details.';
+      sellerProfileSummary.textContent = message;
+    }
+  }
+
+  await loadSellerProducts();
+}
+
+async function loadSellerProducts() {
+  const userId = state.sellerProfileUserId;
+  if (!userId || !sellerProductsGrid) {
+    return;
+  }
+
+  const params = new URLSearchParams({
+    sort_by: state.sellerProductSortBy,
+    order_by: state.sellerProductSortOrder,
+  });
+  sellerProductsGrid.innerHTML = '<div class="empty-state">Loading listings...</div>';
+
+  try {
+    const products = await apiRequest(`/api/v1/products/users/${userId}?${params}`);
+    if (!Array.isArray(products)) {
+      throw new Error('The seller listings response is invalid.');
+    }
+    if (state.sellerProfileUserId !== userId) {
+      return;
+    }
+
+    if (sellerProfileListingsHeading) {
+      sellerProfileListingsHeading.textContent = `Listings (${products.length})`;
+    }
+    if (!products.length) {
+      sellerProductsGrid.innerHTML = '<div class="empty-state">This seller has no listings.</div>';
+      return;
+    }
+
+    sellerProductsGrid.innerHTML = products
+      .map(
+        (product) => `
+          <button class="product-card product-clickable" type="button" data-profile-product-id="${escapeHtml(product.id)}" aria-label="Open ${escapeHtml(product.name || 'product')}">
+            <div class="product-image" aria-hidden="true"></div>
+            <h3>${escapeHtml(product.name || 'Untitled item')}</h3>
+            <p>${escapeHtml(product.description || 'No description provided.')}</p>
+            <div class="meta-row">
+              <span>${escapeHtml(product.category_name || 'Other')}</span>
+              <span>Qty: ${escapeHtml(product.quantity || 0)}</span>
+            </div>
+            <div class="product-price">€${Number(product.price || 0).toFixed(2)}</div>
+          </button>
+        `
+      )
+      .join('');
+  } catch (error) {
+    if (state.sellerProfileUserId === userId) {
+      sellerProductsGrid.innerHTML = `<div class="empty-state">${escapeHtml(getErrorMessage(error, 'Unable to load seller listings.'))}</div>`;
+    }
+  }
+}
+
 async function loadProducts() {
   try {
-    const payload = await apiRequest('/api/v1/products/products?page=1&size=20');
+    const params = new URLSearchParams({
+      page: '1',
+      size: '20',
+      sort_by: state.productSortBy,
+      order_by: state.productSortOrder,
+    });
+    const payload = await apiRequest(`/api/v1/products/products?${params}`);
     const items = payload.items || [];
     const enrichedItems = await Promise.all(
       items.map(async (product) => ({
@@ -980,6 +1174,68 @@ accountViewButtons.forEach((button) => {
 });
 refreshButton.addEventListener('click', loadProducts);
 refreshButtonShop.addEventListener('click', loadProducts);
+productDetailContent?.addEventListener('click', (event) => {
+  const trigger = event.target.closest('[data-seller-user-id]');
+  if (trigger) {
+    void openSellerProfile(Number(trigger.dataset.sellerUserId), Number(trigger.dataset.returnProductId));
+  }
+});
+sellerProductsGrid?.addEventListener('click', (event) => {
+  const productCard = event.target.closest('[data-profile-product-id]');
+  if (productCard) {
+    void openProductDetail(Number(productCard.dataset.profileProductId));
+  }
+});
+sellerProfileBackButton?.addEventListener('click', () => {
+  const returnTab = state.sellerProfileReturnTab || 'shop';
+  const returnProductId = state.sellerProfileReturnProductId;
+  selectTab(returnTab);
+  if (returnProductId) {
+    void openProductDetail(returnProductId);
+  }
+});
+productSortByControls.forEach((control) => {
+  control.value = state.productSortBy;
+  control.addEventListener('change', () => {
+    state.productSortBy = control.value;
+    productSortByControls.forEach((otherControl) => {
+      otherControl.value = state.productSortBy;
+    });
+    loadProducts();
+  });
+});
+productSortOrderControls.forEach((control) => {
+  control.value = state.productSortOrder;
+  control.addEventListener('change', () => {
+    state.productSortOrder = control.value;
+    productSortOrderControls.forEach((otherControl) => {
+      otherControl.value = state.productSortOrder;
+    });
+    loadProducts();
+  });
+});
+userProductSortByControl?.addEventListener('change', () => {
+  state.userProductSortBy = userProductSortByControl.value;
+  loadMyProducts();
+});
+userProductSortOrderControl?.addEventListener('change', () => {
+  state.userProductSortOrder = userProductSortOrderControl.value;
+  loadMyProducts();
+});
+if (sellerProductSortByControl) {
+  sellerProductSortByControl.value = state.sellerProductSortBy;
+  sellerProductSortByControl.addEventListener('change', () => {
+    state.sellerProductSortBy = sellerProductSortByControl.value;
+    loadSellerProducts();
+  });
+}
+if (sellerProductSortOrderControl) {
+  sellerProductSortOrderControl.value = state.sellerProductSortOrder;
+  sellerProductSortOrderControl.addEventListener('change', () => {
+    state.sellerProductSortOrder = sellerProductSortOrderControl.value;
+    loadSellerProducts();
+  });
+}
 
 if (searchInput) {
   searchInput.addEventListener('input', () => {

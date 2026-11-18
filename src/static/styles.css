@@ -292,6 +292,38 @@ h1 {
   margin-bottom: 16px;
 }
 
+.section-actions {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sort-controls {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.sort-controls label {
+  gap: 4px;
+  font-size: 0.72rem;
+}
+
+.sort-controls select {
+  min-height: 38px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #faf6f2;
+  color: var(--text);
+  padding: 7px 10px;
+  font: inherit;
+}
+
+.user-products-sort-controls {
+  margin-bottom: 14px;
+}
+
 .product-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -359,31 +391,6 @@ h1 {
   font-weight: 800;
   color: var(--primary-dark);
   margin: 12px 0 6px;
-}
-
-.catalog-layout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.75fr) minmax(220px, 0.55fr);
-  gap: 20px;
-  align-items: start;
-}
-
-.mini-panel {
-  background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  padding: 18px;
-}
-
-.mini-panel h3 {
-  margin-bottom: 12px;
-}
-
-.mini-panel ul {
-  margin: 0;
-  padding-left: 18px;
-  line-height: 1.8;
-  color: var(--muted);
 }
 
 .stacked-form {
@@ -678,6 +685,46 @@ textarea {
   line-height: 1.6;
 }
 
+.phone-link {
+  display: inline-flex;
+  margin-top: 4px;
+  border-radius: 10px;
+  background: var(--secondary);
+  color: var(--primary-dark);
+  padding: 9px 12px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.phone-link:hover {
+  background: #ffe2c9;
+}
+
+.seller-profile-summary {
+  margin-bottom: 24px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: #fffaf6;
+}
+
+.seller-profile-summary ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px 20px;
+  margin-bottom: 14px;
+  padding: 0;
+  list-style: none;
+}
+
+.seller-profile-summary li {
+  line-height: 1.6;
+}
+
+.seller-listings-section {
+  margin-top: 24px;
+}
+
 .modal-close {
   position: absolute;
   top: 10px;
@@ -785,7 +832,6 @@ textarea {
 
   .hero-banner,
   .promo-grid,
-  .catalog-layout,
   .account-content,
   .account-grid,
   .two-column {
@@ -794,5 +840,25 @@ textarea {
 
   .brand-group {
     justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .section-header,
+  .section-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .sort-controls {
+    justify-content: space-between;
+  }
+
+  .sort-controls label {
+    flex: 1;
+  }
+
+  .sort-controls select {
+    width: 100%;
   }
 }

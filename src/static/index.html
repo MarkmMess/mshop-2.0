@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PeerMarket</title>
-    <link rel="stylesheet" href="/static/styles.css?v=peer-market-2026-10-10" />
+    <link rel="stylesheet" href="/static/styles.css?v=peer-market-seller-profile-page-2026-11-19" />
   </head>
   <body>
     <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
@@ -60,7 +60,26 @@
                 <p class="eyebrow accent">Fresh deals</p>
                 <h2>Popular in your area</h2>
               </div>
-              <button id="refresh-products" class="secondary-button small-button" type="button">Refresh</button>
+              <div class="section-actions">
+                <div class="sort-controls">
+                  <label>
+                    Sort by
+                    <select class="product-sort-by" aria-label="Sort popular products by">
+                      <option value="created">Date listed</option>
+                      <option value="price">Price</option>
+                      <option value="name">Name</option>
+                    </select>
+                  </label>
+                  <label>
+                    Order
+                    <select class="product-sort-order" aria-label="Product sort order">
+                      <option value="desc">Descending</option>
+                      <option value="asc">Ascending</option>
+                    </select>
+                  </label>
+                </div>
+                <button id="refresh-products" class="secondary-button small-button" type="button">Refresh</button>
+              </div>
             </div>
 
             <div id="product-grid" class="product-grid"></div>
@@ -74,19 +93,66 @@
                 <p class="eyebrow accent">Marketplace</p>
                 <h2>Browse all listings</h2>
               </div>
-              <button id="refresh-products-shop" class="secondary-button small-button" type="button">Refresh</button>
+              <div class="section-actions">
+                <div class="sort-controls">
+                  <label>
+                    Sort by
+                    <select class="product-sort-by" aria-label="Sort marketplace products by">
+                      <option value="created">Date listed</option>
+                      <option value="price">Price</option>
+                      <option value="name">Name</option>
+                    </select>
+                  </label>
+                  <label>
+                    Order
+                    <select class="product-sort-order" aria-label="Product sort order">
+                      <option value="desc">Descending</option>
+                      <option value="asc">Ascending</option>
+                    </select>
+                  </label>
+                </div>
+                <button id="refresh-products-shop" class="secondary-button small-button" type="button">Refresh</button>
+              </div>
             </div>
 
-            <div class="catalog-layout">
-              <div id="shop-product-grid" class="product-grid"></div>
-              <aside class="mini-panel">
-                <h3>Why shoppers love it</h3>
-                <ul>
-                  <li>Verified local sellers</li>
-                  <li>Simple price comparison</li>
-                  <li>Direct and friendly communication</li>
-                </ul>
-              </aside>
+            <div id="shop-product-grid" class="product-grid"></div>
+          </div>
+        </section>
+
+        <section id="seller-profile-panel" class="tab-panel">
+          <div class="panel seller-profile-page">
+            <div class="section-header seller-profile-header">
+              <div>
+                <p class="eyebrow accent">Seller profile</p>
+                <h2 id="seller-profile-name">Seller</h2>
+              </div>
+              <button id="seller-profile-back" class="secondary-button" type="button">Back to product</button>
+            </div>
+            <div id="seller-profile-summary" class="profile-summary seller-profile-summary"></div>
+            <div class="seller-listings-section">
+              <div class="section-header">
+                <div>
+                  <p class="eyebrow accent">Marketplace</p>
+                  <h3 id="seller-profile-listings-heading">Listings</h3>
+                </div>
+                <div class="sort-controls">
+                  <label>
+                    Sort by
+                    <select id="seller-product-sort-by" aria-label="Sort seller listings by">
+                      <option value="created">Date listed</option>
+                      <option value="price">Price</option>
+                    </select>
+                  </label>
+                  <label>
+                    Order
+                    <select id="seller-product-sort-order" aria-label="Seller listing sort order">
+                      <option value="desc">Descending</option>
+                      <option value="asc">Ascending</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+              <div id="seller-products-grid" class="product-grid"></div>
             </div>
           </div>
         </section>
@@ -202,6 +268,22 @@
               <div class="account-view" data-account-view="products">
                 <div class="account-list">
                   <h3>My products</h3>
+                  <div class="sort-controls user-products-sort-controls">
+                    <label>
+                      Sort by
+                      <select id="user-products-sort-by" aria-label="Sort my products by">
+                        <option value="created">Date listed</option>
+                        <option value="price">Price</option>
+                      </select>
+                    </label>
+                    <label>
+                      Order
+                      <select id="user-products-sort-order" aria-label="My product sort order">
+                        <option value="desc">Descending</option>
+                        <option value="asc">Ascending</option>
+                      </select>
+                    </label>
+                  </div>
                   <div id="my-products-list" class="mini-product-list">
                     <div class="mini-product-item empty-state-inline">
                       <strong>No products yet</strong>
@@ -312,12 +394,12 @@
 
     <div id="product-detail-modal" class="modal hidden" aria-hidden="true">
       <div class="modal-backdrop" data-product-close-modal="true"></div>
-      <div class="modal-card product-detail-card" role="dialog" aria-modal="true" aria-labelledby="product-detail-title">
+      <div class="modal-card product-detail-card" role="dialog" aria-modal="true" aria-labelledby="detail-modal-title">
         <button class="modal-close product-modal-close" type="button" aria-label="Close">×</button>
         <div id="product-detail-content"></div>
       </div>
     </div>
 
-    <script src="/static/app.js?v=peer-market-cookie-auth-2026-11-08"></script>
+    <script src="/static/app.js?v=peer-market-seller-profile-page-2026-11-19"></script>
   </body>
 </html>

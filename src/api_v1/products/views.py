@@ -1,3 +1,5 @@
+from typing import Literal
+
 from fastapi import APIRouter, status
 from fastapi.params import Depends
 from fastapi_pagination import Page, Params
@@ -13,9 +15,9 @@ from .schemas import (
     ProductCreate,
     ProductUpdate,
     ProductUpdatePartial,
+    SortOrder,
 )
 from .dependencies import product_by_id, paginate, check_product_permission
-
 
 router = APIRouter()
 
@@ -35,10 +37,12 @@ async def create_product(
 
 @router.get("/products", response_model=Page[ProductRet])
 async def get_products(
+    sort_by: Literal["name", "created", "price"] | None = None,
+    order_by: SortOrder = SortOrder.asc,
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
     params: Params = Depends(paginate),
 ):
-    return await crud.get_products(session, params)
+    return await crud.get_products(session, params, sort_by, order_by)
 
 
 @router.get("/{product_id}", response_model=ProductRet)
@@ -49,9 +53,11 @@ async def get_product(product: Product = Depends(product_by_id)):
 @router.get("/users/{user_id}", response_model=list[ProductRet])
 async def get_user_products(
     user_id: int,
+    sort_by: Literal["created", "price"] | None = None,
+    order_by: SortOrder = SortOrder.asc,
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ):
-    return await crud.get_products_by_user(session, user_id)
+    return await crud.get_products_by_user(session, user_id, sort_by, order_by)
 
 
 @router.put("/{product_id}", response_model=ProductRet)
