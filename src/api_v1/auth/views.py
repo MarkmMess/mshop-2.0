@@ -33,7 +33,7 @@ async def create_user(
 
 @router.post("/logout", response_model=dict)
 async def logout(response: Response):
-    response.delete_cookie("access_token")
+    response.delete_cookie(key="access_token", path="/")
     return {"detail": "ok"}
 
 
