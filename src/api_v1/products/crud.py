@@ -53,7 +53,7 @@ async def get_products_by_user(
     products = result.scalars().all()
     if not products:
         raise not_found()
-    return list(products.model_validate([product for product in products]))  # type: ignore
+    return [ProductRet.model_validate(product) for product in products]
 
 
 async def get_product(session: AsyncSession, product_id: int) -> Product | None:

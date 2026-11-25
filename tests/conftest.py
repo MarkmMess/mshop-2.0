@@ -1,4 +1,5 @@
 import os
+from collections.abc import AsyncIterator
 
 os.environ["APP_DB__URL"] = (
     "postgresql+asyncpg://test_user:test_password@localhost:5433/test_shop_db"
@@ -12,6 +13,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
     async_sessionmaker,
     AsyncSession,
+    AsyncEngine,
 )
 from sqlalchemy.pool import NullPool
 
@@ -21,14 +23,14 @@ from api_v1.auth.security import hash_password, encode_jwt
 from main import main_app
 from models import db_helper
 
-test_engine = create_async_engine(
+test_engine: AsyncEngine = create_async_engine(
     str(settings.db.url),
     # echo=True,
     poolclass=NullPool,
 )
 
 
-TestSessionLocal = async_sessionmaker(
+TestSessionLocal: async_sessionmaker[AsyncSession] = async_sessionmaker(
     test_engine,
     expire_on_commit=False,
 )
@@ -36,7 +38,7 @@ TestSessionLocal = async_sessionmaker(
 
 # Creating tables from alchemy models
 @pytest_asyncio.fixture(scope="function", autouse=True)
-async def create_tables():
+async def create_tables() -> AsyncIterator[None]:
 
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -48,16 +50,16 @@ async def create_tables():
 
 
 @pytest_asyncio.fixture(scope="function")
-async def session():
+async def session() -> AsyncIterator[AsyncSession]:
     async with TestSessionLocal() as session:
         yield session
 
 
 @pytest_asyncio.fixture(scope="function")
-async def client(session: AsyncSession):
+async def client(session: AsyncSession) -> AsyncIterator[AsyncClient]:
 
     # Replacing app session with session test one
-    async def override_session():
+    async def override_session() -> AsyncIterator[AsyncSession]:
         yield session
 
     main_app.dependency_overrides[db_helper.scoped_session_dependency] = (
@@ -76,7 +78,7 @@ async def client(session: AsyncSession):
 
 
 @pytest.fixture
-def user_data():
+def user_data() -> dict[str, str]:
     return {
         "username": "test",
         "password": "Test1234",
@@ -86,9 +88,9 @@ def user_data():
 
 @pytest_asyncio.fixture
 async def create_user(
-    user_data: dict,
+    user_data: dict[str, str],
     session: AsyncSession,
-):
+) -> AsyncIterator[User]:
     user = User(
         username=user_data["username"],
         email=user_data["email"],
@@ -104,7 +106,7 @@ async def create_user(
 
 
 @pytest_asyncio.fixture
-async def get_jwt_token(create_user: User):
+async def get_jwt_token(create_user: User) -> AsyncIterator[str]:
     jwt_token = {
         "sub": str(create_user.id),
         "username": create_user.username,
@@ -115,8 +117,8 @@ async def get_jwt_token(create_user: User):
 
 @pytest_asyncio.fixture
 async def get_user_jwt(
-    user_data: dict,
-):
+    user_data: dict[str, str],
+) -> AsyncIterator[str]:
     jwt_token = {
         "sub": "1",
         "username": user_data["username"],

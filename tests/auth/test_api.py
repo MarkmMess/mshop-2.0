@@ -1,12 +1,14 @@
 import pytest
 from httpx import AsyncClient
 
+from models import User
+
 
 @pytest.mark.asyncio
 async def test_create_user(
     client: AsyncClient,
-    user_data: dict,
-):
+    user_data: dict[str, str],
+) -> None:
     response = await client.post("/auth/signIn", json=user_data)
 
     assert response.status_code == 201
@@ -16,8 +18,8 @@ async def test_create_user(
 @pytest.mark.asyncio
 async def test_create_short_password(
     client: AsyncClient,
-    user_data: dict,
-):
+    user_data: dict[str, str],
+) -> None:
     user_data["password"] = "small"
     response = await client.post("/auth/signIn", json=user_data)
     assert response.status_code == 422
@@ -26,8 +28,8 @@ async def test_create_short_password(
 @pytest.mark.asyncio
 async def test_create_weak_password(
     client: AsyncClient,
-    user_data: dict,
-):
+    user_data: dict[str, str],
+) -> None:
     user_data["password"] = "withoutnumbers"
     response = await client.post("/auth/signIn", json=user_data)
     assert response.status_code == 422
@@ -35,14 +37,16 @@ async def test_create_weak_password(
 
 @pytest.mark.asyncio
 async def test_error_create_user(
-    client: AsyncClient, create_user: None, user_data: dict
-):
+    client: AsyncClient, create_user: User, user_data: dict[str, str]
+) -> None:
     response = await client.post("/auth/signIn", json=user_data)
     assert response.status_code == 409
 
 
 @pytest.mark.asyncio
-async def test_get_auth_token(client: AsyncClient, create_user: None, user_data: dict):
+async def test_get_auth_token(
+    client: AsyncClient, create_user: User, user_data: dict[str, str]
+) -> None:
     response = await client.post(
         "/auth/login",
         data={"username": user_data["username"], "password": user_data["password"]},
@@ -53,8 +57,8 @@ async def test_get_auth_token(client: AsyncClient, create_user: None, user_data:
 @pytest.mark.asyncio
 async def test_error_auth_token(
     client: AsyncClient,
-    create_user,
-):
+    create_user: User,
+) -> None:
     response = await client.post(
         "/auth/login", data={"username": "labuba", "password": "228"}
     )
@@ -64,8 +68,8 @@ async def test_error_auth_token(
 @pytest.mark.asyncio
 async def test_auth_user_check_info(
     client: AsyncClient,
-    get_jwt_token,
-):
+    get_jwt_token: str,
+) -> None:
     response = await client.get(
         "/auth/check/user/", cookies={"access_token": get_jwt_token}
     )
@@ -75,8 +79,8 @@ async def test_auth_user_check_info(
 @pytest.mark.asyncio
 async def test_get_user_by_id(
     client: AsyncClient,
-    get_jwt_token,
-):
+    get_jwt_token: str,
+) -> None:
     response = await client.get(
         "/auth/user/1",
         cookies={"access_token": get_jwt_token},
@@ -91,8 +95,8 @@ async def test_get_user_by_id(
 @pytest.mark.asyncio
 async def test_update_user(
     client: AsyncClient,
-    get_jwt_token,
-):
+    get_jwt_token: str,
+) -> None:
     response = await client.put(
         "/auth/update_user/",
         json={"username": "testik", "email": "email@mail.com"},
@@ -106,9 +110,9 @@ async def test_update_user(
 @pytest.mark.asyncio
 async def test_delete_user(
     client: AsyncClient,
-    get_jwt_token,
-    create_user,
-):
+    get_jwt_token: str,
+    create_user: User,
+) -> None:
     response = await client.delete(
         "/auth/delete_user/",
         cookies={"access_token": get_jwt_token},

@@ -59,7 +59,7 @@ class UserPublicRead(BaseModel):
 
 
 class UserValidation(UserSchema):
-    model_config = ConfigDict(strict=True)
+    model_config = ConfigDict(strict=True, from_attributes=True)
     id: int
 
 

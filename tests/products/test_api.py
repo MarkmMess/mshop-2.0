@@ -1,15 +1,16 @@
 from httpx import AsyncClient
 
 from .fixtures import *
+from models import Product, Profile
 
 
 @pytest.mark.asyncio
 async def test_create_product(
     client: AsyncClient,
-    get_jwt_token,
-    product_data,
-    create_profile,
-):
+    get_jwt_token: str,
+    product_data: dict[str, str | int],
+    create_profile: Profile,
+) -> None:
 
     response = await client.post(
         "/products/new",
@@ -22,9 +23,9 @@ async def test_create_product(
 @pytest.mark.asyncio
 async def test_error_create_product(
     client: AsyncClient,
-    get_jwt_token,
-    product_data,
-):
+    get_jwt_token: str,
+    product_data: dict[str, str | int],
+) -> None:
 
     response = await client.post(
         "/products/new",
@@ -37,8 +38,8 @@ async def test_error_create_product(
 @pytest.mark.asyncio
 async def test_get_products(
     client: AsyncClient,
-    create_product,
-):
+    create_product: Product,
+) -> None:
     response = await client.get(
         "products/products?page=1&size=50",
     )
@@ -49,9 +50,9 @@ async def test_get_products(
 @pytest.mark.asyncio
 async def test_get_product(
     client: AsyncClient,
-    create_product,
-    product_data,
-):
+    create_product: Product,
+    product_data: dict[str, str | int],
+) -> None:
     response = await client.get(
         "products/1",
     )
@@ -62,8 +63,8 @@ async def test_get_product(
 @pytest.mark.asyncio
 async def test_get_user_products(
     client: AsyncClient,
-    create_product,
-):
+    create_product: Product,
+) -> None:
     response = await client.get(
         "products/users/1",
     )
@@ -74,10 +75,10 @@ async def test_get_user_products(
 @pytest.mark.asyncio
 async def test_update_full_product(
     client: AsyncClient,
-    create_product,
-    get_user_jwt,
-    product_data,
-):
+    create_product: Product,
+    get_user_jwt: str,
+    product_data: dict[str, str | int],
+) -> None:
     product_data["name"] = "newname"
     response = await client.put(
         "products/1",
@@ -92,10 +93,10 @@ async def test_update_full_product(
 @pytest.mark.asyncio
 async def test_update_product_invalid_quantity(
     client: AsyncClient,
-    create_product,
-    get_user_jwt,
-    product_data,
-):
+    create_product: Product,
+    get_user_jwt: str,
+    product_data: dict[str, str | int],
+) -> None:
     product_data["quantity"] = 0
     response = await client.put(
         "products/1",
@@ -108,9 +109,9 @@ async def test_update_product_invalid_quantity(
 @pytest.mark.asyncio
 async def test_delete_product(
     client: AsyncClient,
-    create_product,
-    get_jwt_token,
-):
+    create_product: Product,
+    get_jwt_token: str,
+) -> None:
     response = await client.delete(
         "products/1",
         cookies={"access_token": get_jwt_token},

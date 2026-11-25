@@ -5,7 +5,7 @@ from main import main_app
 
 
 @pytest.mark.asyncio
-async def test_frontend_is_not_cached_by_browser():
+async def test_frontend_is_not_cached_by_browser() -> None:
     async with AsyncClient(
         transport=ASGITransport(app=main_app),
         base_url="http://test",

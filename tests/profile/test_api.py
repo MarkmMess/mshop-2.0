@@ -3,10 +3,15 @@ from httpx import AsyncClient
 
 from .fixtures import *
 from ..products.fixtures import *
+from models import Product, Profile
 
 
 @pytest.mark.asyncio
-async def test_create_profile(client: AsyncClient, get_jwt_token, profile_data: dict):
+async def test_create_profile(
+    client: AsyncClient,
+    get_jwt_token: str,
+    profile_data: dict[str, str],
+) -> None:
     response = await client.post(
         url="/profile/create",
         json=profile_data,
@@ -16,7 +21,9 @@ async def test_create_profile(client: AsyncClient, get_jwt_token, profile_data: 
 
 
 @pytest.mark.asyncio
-async def test_create_profile_without_mobile(client: AsyncClient, get_jwt_token):
+async def test_create_profile_without_mobile(
+    client: AsyncClient, get_jwt_token: str
+) -> None:
     response = await client.post(
         url="/profile/create",
         json={"first_name": "Anna", "mobile": None},
@@ -26,7 +33,9 @@ async def test_create_profile_without_mobile(client: AsyncClient, get_jwt_token)
 
 
 @pytest.mark.asyncio
-async def test_create_profile_invalid_mobile(client: AsyncClient, get_jwt_token):
+async def test_create_profile_invalid_mobile(
+    client: AsyncClient, get_jwt_token: str
+) -> None:
     response = await client.post(
         url="/profile/create",
         json={"first_name": "Anna", "mobile": "+1234567890"},
@@ -38,9 +47,9 @@ async def test_create_profile_invalid_mobile(client: AsyncClient, get_jwt_token)
 @pytest.mark.asyncio
 async def test_get_profile(
     client: AsyncClient,
-    create_profile_with_user,
-    get_user_jwt,
-):
+    create_profile_with_user: Profile,
+    get_user_jwt: str,
+) -> None:
     response = await client.get(
         url="/profile/profile", cookies={"access_token": get_user_jwt}
     )
@@ -51,8 +60,8 @@ async def test_get_profile(
 @pytest.mark.asyncio
 async def test_get_user_profile(
     client: AsyncClient,
-    create_profile_with_user,
-):
+    create_profile_with_user: Profile,
+) -> None:
     response = await client.get(
         url="/profile/profile/1",
     )
@@ -63,9 +72,9 @@ async def test_get_user_profile(
 @pytest.mark.asyncio
 async def test_profile_product(
     client: AsyncClient,
-    create_product,
-    create_profile,
-):
+    create_product: Product,
+    create_profile: Profile,
+) -> None:
     response = await client.get(
         url="/profile/profile/products/1",
     )
@@ -75,10 +84,10 @@ async def test_profile_product(
 @pytest.mark.asyncio
 async def test_update_profile(
     client: AsyncClient,
-    create_profile_with_user,
-    profile_data: dict,
-    get_user_jwt,
-):
+    create_profile_with_user: Profile,
+    profile_data: dict[str, str],
+    get_user_jwt: str,
+) -> None:
     profile_data["first_name"] = "newName"
     response = await client.put(
         url="/profile/profile/update",
@@ -91,9 +100,9 @@ async def test_update_profile(
 @pytest.mark.asyncio
 async def test_delete_profile(
     client: AsyncClient,
-    create_profile_with_user,
-    get_user_jwt,
-):
+    create_profile_with_user: Profile,
+    get_user_jwt: str,
+) -> None:
     response = await client.delete(
         url="/profile/delete", cookies={"access_token": get_user_jwt}
     )
