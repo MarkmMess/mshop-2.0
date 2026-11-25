@@ -387,11 +387,36 @@ async function loadMyProducts() {
               <div>
                 <strong>${escapeHtml(product.name || 'Untitled item')}</strong>
                 <p>${escapeHtml(product.description || 'No description provided.')}</p>
+                <div class="meta-row" style="margin-top: 6px;">
+                  <span>€${Number(product.price || 0).toFixed(2)}</span>
+                  <span>Qty: ${escapeHtml(product.quantity || 0)}</span>
+                </div>
               </div>
+              <button type="button" class="ghost-button danger-button small-button delete-product-btn" data-product-id="${escapeHtml(product.id)}" title="Delete listing">Delete</button>
             </div>
           `
         )
         .join('');
+
+      myProductsList.querySelectorAll('.delete-product-btn').forEach((btn) => {
+        btn.addEventListener('click', async (event) => {
+          event.stopPropagation();
+          const productId = btn.dataset.productId;
+          if (!productId) {
+            return;
+          }
+          try {
+            await apiRequest(`/api/v1/products/${productId}`, {
+              method: 'DELETE',
+            });
+            showToast('Product deleted successfully', 'success');
+            await loadMyProducts();
+            await loadProducts();
+          } catch (err) {
+            showToast(getErrorMessage(err, 'Unable to delete product.'), 'error');
+          }
+        });
+      });
     }
 
     return state.userProducts;
@@ -436,16 +461,31 @@ async function saveProfile(event) {
   }
 
   const formData = new FormData(profileForm);
+  const mobileRaw = String(formData.get('mobile') || '').trim();
   const payload = {
     first_name: String(formData.get('first_name') || '').trim(),
     last_name: String(formData.get('last_name') || '').trim() || null,
     bio: String(formData.get('bio') || '').trim() || null,
-    mobile: String(formData.get('mobile') || '').trim() || null,
+    mobile: mobileRaw,
   };
 
   if (!payload.first_name) {
     setStatus(profileStatus, 'First name is required.', 'error');
     showToast('First name is required.', 'error');
+    return;
+  }
+
+  if (!payload.mobile) {
+    setStatus(profileStatus, 'Mobile number is required.', 'error');
+    showToast('Mobile number is required.', 'error');
+    return;
+  }
+
+  const mobileRegex = /^(\+375|80)(25|29|33|44)\d{7}$/;
+  if (!mobileRegex.test(payload.mobile)) {
+    const errorMsg = 'Mobile number must be in format +375XXXXXXXXX or 80XXXXXXXXX (e.g. +375291234567).';
+    setStatus(profileStatus, errorMsg, 'error');
+    showToast(errorMsg, 'error');
     return;
   }
 
@@ -470,14 +510,6 @@ async function saveProfile(event) {
     renderProfileSummary(state.profile);
     renderAccountDashboard();
     await loadMyProducts();
-    profileForm.reset();
-    if (state.profile) {
-      const profile = state.profile;
-      profileForm.querySelector('[name="first_name"]').value = profile.first_name || '';
-      profileForm.querySelector('[name="last_name"]').value = profile.last_name || '';
-      profileForm.querySelector('[name="mobile"]').value = profile.mobile || '';
-      profileForm.querySelector('[name="bio"]').value = profile.bio || '';
-    }
   } catch (error) {
     const message = getErrorMessage(error, 'Unable to save profile.');
     setStatus(profileStatus, message, 'error');
@@ -1048,8 +1080,13 @@ async function createProduct(event) {
     showToast('Product created successfully', 'success');
     event.target.reset();
     await loadProducts();
-    setAccountView('products');
-    selectTab('shop');
+    await loadMyProducts();
+    if (event.target === accountProductForm) {
+      setAccountView('products');
+      selectTab('account');
+    } else {
+      selectTab('shop');
+    }
   } catch (error) {
     const message = getErrorMessage(error, 'Unable to create product.');
     const statusTarget = event.target === accountProductForm ? accountProductStatus : productStatus;
@@ -1089,7 +1126,8 @@ async function logout() {
 
 function handleProductSearch() {
   const query = (searchInput?.value || '').trim();
-  if (query) {
+  const activePanel = document.querySelector('.tab-panel.active');
+  if (query && activePanel && activePanel.id !== 'home-panel' && activePanel.id !== 'shop-panel') {
     selectTab('home');
   }
 
@@ -1105,8 +1143,9 @@ function setCategoryFilter(categoryName) {
     button.classList.toggle('active', button.dataset.category === categoryName);
   });
 
-  if (searchInput && !(searchInput.value || '').trim()) {
-    selectTab('home');
+  const activePanel = document.querySelector('.tab-panel.active');
+  if (activePanel && activePanel.id !== 'home-panel' && activePanel.id !== 'shop-panel') {
+    selectTab('shop');
   }
 
   loadProducts();
@@ -1131,6 +1170,13 @@ function bindAuthTabs() {
 
   document.querySelector('.modal-close')?.addEventListener('click', closeAuthModal);
   document.querySelector('.product-modal-close')?.addEventListener('click', closeProductDetailModal);
+
+  window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') {
+      closeAuthModal();
+      closeProductDetailModal();
+    }
+  });
 }
 
 brandHomeButton?.addEventListener('click', () => {
@@ -1239,7 +1285,8 @@ if (sellerProductSortOrderControl) {
 
 if (searchInput) {
   searchInput.addEventListener('input', () => {
-    if ((searchInput.value || '').trim()) {
+    const activePanel = document.querySelector('.tab-panel.active');
+    if ((searchInput.value || '').trim() && activePanel && activePanel.id !== 'home-panel' && activePanel.id !== 'shop-panel') {
       selectTab('home');
     }
     loadProducts();

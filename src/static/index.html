@@ -27,6 +27,9 @@
         </form>
 
         <div class="header-actions">
+          <button class="tab-button active" type="button" data-tab="home">Home</button>
+          <button class="tab-button" type="button" data-tab="shop">Marketplace</button>
+          <button class="tab-button" type="button" data-tab="sell">Sell</button>
           <button id="login-open" class="ghost-button" type="button">Sign in</button>
           <button id="signup-open" class="primary-button" type="button">Register</button>
           <button id="new-product-header" class="secondary-button hidden" type="button">New product</button>
@@ -249,7 +252,8 @@
                       </label>
                       <label>
                         Mobile
-                        <input name="mobile" type="tel" placeholder="+375291234567 or 80291234567" />
+                        <input name="mobile" type="tel" placeholder="+375291234567 or 80291234567" required />
+                        <small class="field-hint">Format: +375XXXXXXXXX or 80XXXXXXXXX (e.g. +375291234567)</small>
                       </label>
                       <label>
                         Bio

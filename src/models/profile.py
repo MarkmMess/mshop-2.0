@@ -13,10 +13,10 @@ if TYPE_CHECKING:
 class Profile(Base):
     id: None = None
 
-    first_name: Mapped[str] = mapped_column(String[40])
-    last_name: Mapped[str | None] = mapped_column(String[40])
+    first_name: Mapped[str] = mapped_column(String(40))
+    last_name: Mapped[str | None] = mapped_column(String(40))
     bio: Mapped[str | None]
-    mobile: Mapped[str | None] = mapped_column(String[15])
+    mobile: Mapped[str | None] = mapped_column(String(15))
 
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id"), unique=True, primary_key=True

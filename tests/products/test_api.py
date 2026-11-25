@@ -90,6 +90,22 @@ async def test_update_full_product(
 
 
 @pytest.mark.asyncio
+async def test_update_product_invalid_quantity(
+    client: AsyncClient,
+    create_product,
+    get_user_jwt,
+    product_data,
+):
+    product_data["quantity"] = 0
+    response = await client.put(
+        "products/1",
+        json=product_data,
+        cookies={"access_token": get_user_jwt},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_delete_product(
     client: AsyncClient,
     create_product,

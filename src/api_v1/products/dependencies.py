@@ -32,7 +32,7 @@ def paginate(
 
 def check_quantity(quantity: int | None):
     if quantity is not None and quantity < 1:
-        raise unprocessable_entity()
+        raise unprocessable_entity(detail="Quantity must be greater than 0")
 
 
 def check_product_permission(product: ProductRet | Product, user: User | UserRead):

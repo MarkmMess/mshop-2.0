@@ -16,6 +16,26 @@ async def test_create_profile(client: AsyncClient, get_jwt_token, profile_data: 
 
 
 @pytest.mark.asyncio
+async def test_create_profile_without_mobile(client: AsyncClient, get_jwt_token):
+    response = await client.post(
+        url="/profile/create",
+        json={"first_name": "Anna", "mobile": None},
+        cookies={"access_token": get_jwt_token},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_create_profile_invalid_mobile(client: AsyncClient, get_jwt_token):
+    response = await client.post(
+        url="/profile/create",
+        json={"first_name": "Anna", "mobile": "+1234567890"},
+        cookies={"access_token": get_jwt_token},
+    )
+    assert response.status_code == 422
+
+
+@pytest.mark.asyncio
 async def test_get_profile(
     client: AsyncClient,
     create_profile_with_user,
