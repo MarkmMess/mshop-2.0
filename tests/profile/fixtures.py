@@ -8,7 +8,7 @@ def profile_data():
         'first_name': 'John',
         'last_name': 'Doe',
         'bio': 'some bio',
-        'mobile': '+37555555555',
+        'mobile': '+375291234567',
     }
 
 
