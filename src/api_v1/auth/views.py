@@ -26,9 +26,9 @@ async def create_user(
     response: Response,
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ) -> UserRead:
-    user = await crud.create_user(session, user)
-    set_auth_cookie(response, user.id, user.username)
-    return user
+    created_user = await crud.create_user(session, user)  # type: ignore[arg-type]
+    set_auth_cookie(response, created_user.id, created_user.username)
+    return created_user
 
 
 @router.post("/logout", response_model=dict)

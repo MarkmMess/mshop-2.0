@@ -1,15 +1,16 @@
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+
 # from sqlalchemy.orm import selectinload
 
 from .security import hash_password
 from models import User
-from .schemas import CreateUser, UserRead, UserValidation, UserUpdate
+from .schemas import UserRead, UserValidation, UserUpdate
 from .errors import not_found, taken_name
 
 
-async def create_user(session: AsyncSession, user_info: CreateUser) -> UserRead:
+async def create_user(session: AsyncSession, user_info: User) -> UserRead:
     check = await get_user_for_validation(session, user_info.username)
     if check:
         raise taken_name
@@ -43,7 +44,7 @@ async def get_user_for_validation(
 ) -> UserValidation | None:
     stmt = select(User).where(User.username == username)
     user = await session.scalar(stmt)
-    return user
+    return UserValidation.model_validate(user) if user else None
 
 
 # async def get_user_with_products(session: AsyncSession, username: str):

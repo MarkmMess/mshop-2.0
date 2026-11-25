@@ -1,12 +1,15 @@
+from typing import Any
+
 from fastapi import Depends, Form, Response
 from fastapi.security import APIKeyCookie
 from jose import JWTError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models import db_helper
+from src.models.user import User
 from . import crud
 from .errors import not_found, unauth, inactive
-from .schemas import UserRead, UserPublicRead, UserValidation
+from .schemas import UserPublicRead, UserValidation
 import api_v1.auth.security as auth_security
 
 acces_cookie = APIKeyCookie(name="access_token", auto_error=False)
@@ -42,7 +45,7 @@ async def validate_auth_user(
 
 def get_current_token_payload(
     token: str = Depends(acces_cookie),
-) -> dict:
+) -> dict[str, Any]:
     if not token:
         raise unauth
     try:
@@ -54,19 +57,20 @@ def get_current_token_payload(
 
 async def get_current_auth_user(
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
-    payload: dict = Depends(get_current_token_payload),
-) -> UserRead:
-    user_id: int | None = int(payload.get("sub"))
-    if not user_id:
+    payload: dict[str, Any] = Depends(get_current_token_payload),
+) -> User:
+    subject = payload.get("sub")
+    if subject is None:
         raise unauth
+    user_id = int(subject)
     if user := await crud.get_user(session, user_id):
         return user
     raise not_found
 
 
 def get_current_active_auth_user(
-    user: UserRead = Depends(get_current_auth_user),
-):
+    user: User = Depends(get_current_auth_user),
+) -> User:
     if user.active:
         return user
     raise inactive

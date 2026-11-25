@@ -24,11 +24,13 @@ async def get_products(
     if sort_by is None:
         stmt = select(Product).order_by(Product.created_at.desc())
     else:
-        sort = sort_dict.get(sort_by)
+        column = sort_dict[sort_by]
         stmt = select(Product).order_by(
-            sort.asc() if order_by == SortOrder.asc else sort.desc()
+            column.asc() if order_by == SortOrder.asc else column.desc()
         )
-    return await apaginate(session, stmt, params=params)
+    return await apaginate(
+        conn=session, query=stmt, params=params  # pyright: ignore[reportArgumentType]
+    )
 
 
 async def get_products_by_user(
@@ -41,17 +43,17 @@ async def get_products_by_user(
             .where(Product.user_id == user_id)
         )
     else:
-        sort = sort_dict.get(sort_by)
+        column = sort_dict[sort_by]
         stmt = (
             select(Product)
-            .order_by(sort.asc() if order_by == SortOrder.asc else sort.desc())
+            .order_by(column.asc() if order_by == SortOrder.asc else column.desc())
             .where(Product.user_id == user_id)
         )
-    result: Result = await session.execute(stmt)
+    result: Result[Product] = await session.execute(stmt)
     products = result.scalars().all()
     if not products:
         raise not_found()
-    return list(products)
+    return list(products.model_validate([product for product in products]))  # type: ignore
 
 
 async def get_product(session: AsyncSession, product_id: int) -> Product | None:

@@ -1,4 +1,5 @@
 from datetime import timedelta, datetime, timezone
+from typing import Any
 
 import bcrypt
 
@@ -8,7 +9,7 @@ from core.config import settings
 
 
 def encode_jwt(
-    token: dict,
+    token: dict[str, Any],
     secret: str = settings.auth_jwt.secret,
     algorithm: str = settings.auth_jwt.algorithm,
     expire_minutes: int = settings.auth_jwt.token_expire_minutes,
@@ -48,5 +49,5 @@ def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode("utf-8")
 
 
-def validate_password(password: str, hashed_pass) -> bool:
+def validate_password(password: str, hashed_pass: str) -> bool:
     return bcrypt.checkpw(password.encode(), hashed_pass.encode("utf-8"))

@@ -1,6 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
-from typing import Optional
+from typing import Any, Optional
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -61,7 +61,7 @@ class SortOrder(StrEnum):
     desc = "desc"
 
 
-sort_dict = {
+sort_dict: dict[str, Any] = {
     "name": Product.name,
     "created": Product.created_at,
     "price": Product.price,
