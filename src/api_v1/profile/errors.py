@@ -1,8 +1,8 @@
 from fastapi import HTTPException, status
 
 
-def not_found():
-    raise HTTPException(
+def not_found(detail="Profile not found"):
+    return HTTPException(
         status_code=status.HTTP_404_NOT_FOUND,
-        detail="Profile not found",
+        detail=detail,
     )
