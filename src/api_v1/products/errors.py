@@ -16,8 +16,8 @@ def not_found(detail="Product not found"):
         detail=detail,
     )
 
-def unprocessable_entity():
+def unprocessable_entity(detail="Quantity must be greater than 0"):
     return HTTPException(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-        detail="Quantity must be greater than 0",
+        detail=detail,
     )

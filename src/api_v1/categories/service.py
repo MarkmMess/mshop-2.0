@@ -5,7 +5,7 @@ from models import db_helper, Category
 from .crud import get_category, create_category
 
 
-async def check_category(session: AsyncSession, name: str) -> Category | None:
+async def check_category(session: AsyncSession, name: str | None) -> Category | None:
     if not name:
         name = 'Other'
     category = await get_category(session, name)

@@ -30,14 +30,14 @@ def paginate(
     return Params(page=page, size=size)
 
 
-def check_quantity(quantity: int):
+def check_quantity(quantity: int | None):
     if quantity < 1:
-        raise unprocessable_entity
+        raise unprocessable_entity()
 
 
 def check_product_permission(product: ProductRet | Product, user: UserRead):
     if product.user_id != user.id:
-        raise forbidden
+        raise forbidden()
 
 
 async def check_create_product_permission(
