@@ -546,6 +546,10 @@ textarea {
 }
 
 .mini-product-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
   border: 1px solid var(--border);
   border-radius: 14px;
   padding: 14px 16px;
