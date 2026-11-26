@@ -44,12 +44,6 @@ class ProductRet(BaseModel):
     price: Decimal
     id: int
     user_id: int
-    first_name: str | None = Field(
-        None, validation_alias=AliasPath("user", "profile", "first_name")
-    )
-    mobile: str | None = Field(
-        None, validation_alias=AliasPath("user", "profile", "mobile")
-    )
     quantity: Optional[int] = Field(gt=0)
     category_name: Optional[str] = Field(None, max_length=50)
     created_at: datetime
@@ -59,6 +53,15 @@ class ProductRet(BaseModel):
             Decimal: lambda v: float(v) if v else 0,
             datetime: lambda v: v.isoformat(),
         },
+    )
+
+
+class ProductProfileRet(ProductRet):
+    first_name: str | None = Field(
+        None, validation_alias=AliasPath("user", "profile", "first_name")
+    )
+    mobile: str | None = Field(
+        None, validation_alias=AliasPath("user", "profile", "mobile")
     )
 
 

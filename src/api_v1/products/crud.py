@@ -10,6 +10,7 @@ from .dependencies import check_quantity, check_create_product_permission
 from .errors import not_found
 from .schemas import (
     ProductCreate,
+    ProductProfileRet,
     ProductUpdate,
     ProductUpdatePartial,
     ProductRet,
@@ -21,7 +22,7 @@ from ..categories.service import check_category
 
 async def get_products(
     session: AsyncSession, params: Params, sort_by: str | None, order_by: SortOrder
-) -> Page[ProductRet]:
+) -> Page[ProductProfileRet]:
     if sort_by is None:
         stmt = (
             select(Product)
@@ -42,7 +43,7 @@ async def get_products(
 
 async def get_products_by_user(
     session: AsyncSession, user_id: int, sort_by: str | None, order_by: SortOrder
-) -> list[ProductRet]:
+) -> list[ProductProfileRet]:
     if sort_by is None:
         stmt = (
             select(Product)
@@ -62,17 +63,20 @@ async def get_products_by_user(
     products = result.scalars().all()
     if not products:
         raise not_found()
-    return [ProductRet.model_validate(product) for product in products]
+    return [ProductProfileRet.model_validate(product) for product in products]
 
 
-async def get_product(session: AsyncSession, product_id: int) -> Product | None:
+async def get_product(
+    session: AsyncSession, product_id: int
+) -> ProductProfileRet | None:
     stmt = (
         select(Product)
         .where(Product.id == product_id)
         .options(selectinload(Product.user).selectinload(User.profile))
     )
     result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    product = result.scalar_one_or_none()
+    return ProductProfileRet.model_validate(product) if product else None
 
 
 async def create_product(
@@ -109,5 +113,8 @@ async def update_product(
 
 
 async def delete_product(session: AsyncSession, product: ProductRet) -> None:
-    await session.delete(product)
+    db_product = await session.get(Product, product.id)
+    if db_product is None:
+        raise not_found()
+    await session.delete(db_product)
     await session.commit()

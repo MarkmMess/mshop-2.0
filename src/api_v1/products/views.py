@@ -10,6 +10,7 @@ from ..auth.schemas import UserRead
 from ..auth.service import get_current_active_auth_user
 from . import crud
 from .schemas import (
+    ProductProfileRet,
     ProductRet,
     ProductCreate,
     ProductUpdate,
@@ -34,7 +35,7 @@ async def create_product(
     )
 
 
-@router.get("/products", response_model=Page[ProductRet])
+@router.get("/products", response_model=Page[ProductProfileRet])
 async def get_products(
     session: Annotated[AsyncSession, Depends(db_helper.scoped_session_dependency)],
     params: Annotated[Params, Depends(paginate)],

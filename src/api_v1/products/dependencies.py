@@ -5,7 +5,7 @@ from fastapi_pagination import Params
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .errors import not_found, unprocessable_entity, forbidden
-from .schemas import ProductRet, ProductCreate
+from .schemas import ProductRet, ProductCreate, ProductProfileRet
 from . import crud
 from ..auth.schemas import UserRead
 from models import db_helper, Product, User
@@ -16,7 +16,7 @@ from ..categories.service import check_category
 async def product_by_id(
     product_id: Annotated[int, Path],
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
-) -> Product:
+) -> ProductRet | ProductProfileRet:
     product = await crud.get_product(session=session, product_id=product_id)
     if product:
         return product
