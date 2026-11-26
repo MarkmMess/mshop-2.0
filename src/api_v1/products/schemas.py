@@ -3,7 +3,7 @@ from decimal import Decimal
 from typing import Any, Optional
 from enum import StrEnum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AliasChoices, AliasPath, BaseModel, ConfigDict, Field
 
 from models import Product
 
@@ -44,6 +44,12 @@ class ProductRet(BaseModel):
     price: Decimal
     id: int
     user_id: int
+    first_name: str | None = Field(
+        None, validation_alias=AliasPath("user", "profile", "first_name")
+    )
+    mobile: str | None = Field(
+        None, validation_alias=AliasPath("user", "profile", "mobile")
+    )
     quantity: Optional[int] = Field(gt=0)
     category_name: Optional[str] = Field(None, max_length=50)
     created_at: datetime

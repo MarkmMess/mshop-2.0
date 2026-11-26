@@ -3,7 +3,9 @@ from sqlalchemy.engine import Result
 from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi_pagination import Page, Params
 from fastapi_pagination.ext.sqlalchemy import apaginate
+from sqlalchemy.orm import selectinload
 
+from models import Product, User
 from .dependencies import check_quantity, check_create_product_permission
 from .errors import not_found
 from .schemas import (
@@ -14,7 +16,6 @@ from .schemas import (
     SortOrder,
     sort_dict,
 )
-from models.product import Product
 from ..categories.service import check_category
 
 
@@ -22,11 +23,17 @@ async def get_products(
     session: AsyncSession, params: Params, sort_by: str | None, order_by: SortOrder
 ) -> Page[ProductRet]:
     if sort_by is None:
-        stmt = select(Product).order_by(Product.created_at.desc())
+        stmt = (
+            select(Product)
+            .order_by(Product.created_at.desc())
+            .options(selectinload(Product.user).selectinload(User.profile))
+        )
     else:
         column = sort_dict[sort_by]
-        stmt = select(Product).order_by(
-            column.asc() if order_by == SortOrder.asc else column.desc()
+        stmt = (
+            select(Product)
+            .order_by(column.asc() if order_by == SortOrder.asc else column.desc())
+            .options(selectinload(Product.user).selectinload(User.profile))
         )
     return await apaginate(
         conn=session, query=stmt, params=params  # pyright: ignore[reportArgumentType]
@@ -41,6 +48,7 @@ async def get_products_by_user(
             select(Product)
             .order_by(Product.created_at.desc())
             .where(Product.user_id == user_id)
+            .options(selectinload(Product.user).selectinload(User.profile))
         )
     else:
         column = sort_dict[sort_by]
@@ -48,6 +56,7 @@ async def get_products_by_user(
             select(Product)
             .order_by(column.asc() if order_by == SortOrder.asc else column.desc())
             .where(Product.user_id == user_id)
+            .options(selectinload(Product.user).selectinload(User.profile))
         )
     result: Result[Product] = await session.execute(stmt)
     products = result.scalars().all()
@@ -57,8 +66,13 @@ async def get_products_by_user(
 
 
 async def get_product(session: AsyncSession, product_id: int) -> Product | None:
-    result = await session.get(Product, product_id)
-    return result
+    stmt = (
+        select(Product)
+        .where(Product.id == product_id)
+        .options(selectinload(Product.user).selectinload(User.profile))
+    )
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()
 
 
 async def create_product(
