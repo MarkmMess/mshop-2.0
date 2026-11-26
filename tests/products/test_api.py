@@ -18,6 +18,7 @@ async def test_create_product(
         cookies={"access_token": get_jwt_token},
     )
     assert response.status_code == 201
+    assert response.json()["name"] == product_data["name"]
 
 
 @pytest.mark.asyncio
@@ -39,12 +40,16 @@ async def test_error_create_product(
 async def test_get_products(
     client: AsyncClient,
     create_product: Product,
+    create_profile: Profile,
 ) -> None:
     response = await client.get(
         "products/products?page=1&size=50",
     )
     assert response.status_code == 200
     assert response.json()["items"] != []
+    item = response.json()["items"][0]
+    assert item["first_name"] == create_profile.first_name
+    assert item["mobile"] == create_profile.mobile
 
 
 @pytest.mark.asyncio

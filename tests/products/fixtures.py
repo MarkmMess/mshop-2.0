@@ -47,7 +47,9 @@ async def create_category(
 async def create_profile(
     session: AsyncSession,
 ) -> AsyncIterator[Profile]:
-    profile = Profile(first_name="John", last_name="Doe", user_id=1)
+    profile = Profile(
+        first_name="John", last_name="Doe", mobile="80291234567", user_id=1
+    )
     session.add(profile)
     await session.commit()
     await session.refresh(profile)
