@@ -9,12 +9,12 @@ DB_PATH = BASE_DIR / "db.sqlite3"
 
 class RunConfig(BaseModel):
     host: str = "0.0.0.0"
-    port: int = 8001
+    port: int = 8000
 
 
 class DbSettings(BaseModel):
     url: PostgresDsn
-    echo: bool = False
+    echo: bool = True
     echo_pool: bool = False
     pool_size: int = 1
     max_overflow: int = 10

@@ -16,7 +16,9 @@ async def create_profile(
     user=Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ) -> ProfileRead:
-    return await crud.create_profile(profile, user.id, session)
+    return await crud.create_profile(
+        profile, user.id, session
+    )  # pyright: ignore[reportReturnType]
 
 
 @router.get("/profile", response_model=ProfileRead)
@@ -24,7 +26,7 @@ async def my_profile(
     user=Depends(get_current_active_auth_user),
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ) -> ProfileRead:
-    return await crud.get_profile(user.id, session)
+    return await crud.get_profile(user.id, session)  # pyright: ignore[reportReturnType]
 
 
 @router.get("/profile/{user_id}", response_model=ProfileRead | None)
@@ -32,7 +34,7 @@ async def profile_read(
     user_id: int,
     session: AsyncSession = Depends(db_helper.scoped_session_dependency),
 ) -> ProfileRead:
-    return await crud.get_profile(user_id, session)
+    return await crud.get_profile(user_id, session)  # pyright: ignore[reportReturnType]
 
 
 @router.get("/profile/products/{user_id}")

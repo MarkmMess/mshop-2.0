@@ -11,14 +11,16 @@ def validate_mobile_number(mobile: str) -> str:
         raise ValueError("mobile number must be a string")
     stripped = mobile.strip()
     if not BELARUS_MOBILE_REGEX.fullmatch(stripped):
-        raise ValueError("mobile number must be in the format +375XXXXXXXXX or 80XXXXXXXXX")
+        raise ValueError(
+            "mobile number must be in the format +375XXXXXXXXX or 80XXXXXXXXX"
+        )
     return stripped
 
 
 class CreateProfile(BaseModel):
     first_name: str = Field(min_length=3, max_length=30)
-    last_name: Optional[str | None] = Field(None, min_length=3, max_length=30)
-    bio: Optional[str | None] = Field(None, max_length=255)
+    last_name: Optional[str | None] = Field(default=None, min_length=3, max_length=30)
+    bio: Optional[str | None] = Field(default=None, max_length=255)
     mobile: str
 
     @field_validator("mobile", mode="before")
@@ -35,8 +37,10 @@ class ProfileRead(BaseModel):
     user_id: int
 
 
-class UpdateProfile(CreateProfile):
+class UpdateProfile(BaseModel):
     first_name: Optional[str | None] = Field(default=None, min_length=3, max_length=30)
+    last_name: Optional[str | None] = Field(default=None, min_length=3, max_length=30)
+    bio: Optional[str | None] = Field(default=None, max_length=255)
     mobile: Optional[str] = Field(default=None)
 
     @field_validator("mobile", mode="before")
