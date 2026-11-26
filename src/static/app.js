@@ -586,29 +586,36 @@ function setAuthState() {
   }
 }
 
-async function loadCurrentUser() {
-  const user = await apiRequest('/api/v1/auth/check/user/');
-  state.isAuthenticated = true;
-  state.username = user.username || 'Seller';
-  return user;
-}
-
 async function initializeApp() {
   localStorage.removeItem('mshop_token');
   localStorage.removeItem('mshop_user');
 
-  try {
-    await loadCurrentUser();
-  } catch (error) {
-    state.isAuthenticated = false;
-    state.username = 'Guest';
-  }
-
   setAuthState();
-  await loadProducts();
+
+  const userRequest = loadCurrentUser()
+    .catch(() => {
+      state.isAuthenticated = false;
+      state.username = 'Guest';
+    })
+    .finally(() => {
+      setAuthState();
+    });
+  const productsRequest = loadProducts();
+
+  await Promise.allSettled([userRequest, productsRequest]);
 }
 
-async function apiRequest(url, options = {}) {
+async function fetchWithTimeout(url, ms = 8000, options = {}) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function apiRequest(url, options = {}, timeoutMs = 8000) {
   const headers = {
     ...(options.headers || {}),
   };
@@ -617,11 +624,12 @@ async function apiRequest(url, options = {}) {
     headers['Content-Type'] = 'application/json';
   }
 
-  const response = await fetch(url, {
+  const fetchOptions = {
     ...options,
     headers,
-    credentials: 'same-origin',
-  });
+    credentials: options.credentials || 'same-origin',
+  };
+  const response = await fetchWithTimeout(url, timeoutMs, fetchOptions);
 
   const contentType = response.headers.get('content-type') || '';
   const body = contentType.includes('application/json')
@@ -634,6 +642,40 @@ async function apiRequest(url, options = {}) {
   }
 
   return body;
+}
+
+async function loadCurrentUser() {
+  const user = await apiRequest(
+    '/api/v1/auth/check/user/',
+    { credentials: 'include' },
+  );
+  state.isAuthenticated = true;
+  state.username = user.username || 'Seller';
+  return user;
+}
+
+async function loadProducts() {
+  try {
+    const params = new URLSearchParams({
+      page: '1',
+      size: '20',
+      sort_by: state.productSortBy,
+      order_by: state.productSortOrder,
+    });
+    const payload = await apiRequest(`/api/v1/products/products?${params}`);
+    const items = payload.items || [];
+    renderProducts(items, productGrid);
+    renderProducts(items, shopProductGrid);
+  } catch (error) {
+    const fallback = '<div class="empty-state">Unable to load products right now.</div>';
+    if (productGrid) {
+      productGrid.innerHTML = fallback;
+    }
+    if (shopProductGrid) {
+      shopProductGrid.innerHTML = fallback;
+    }
+    setStatus(productStatus, error.message, 'error');
+  }
 }
 
 function getFilteredProducts(items) {
@@ -724,7 +766,10 @@ function renderProducts(items, targetGrid) {
           <div class="product-price">€${Number(product.price || 0).toFixed(2)}</div>
           <div class="meta-row">
             <span>ID: ${escapeHtml(product.id || 'n/a')}</span>
-            <span>Seller: ${escapeHtml(product.seller_name || 'Loading...')}</span>
+            <span>Seller: ${escapeHtml(product.first_name || `Seller #${product.user_id}`)}</span>
+          </div>
+          <div class="meta-row">
+            <span>Mobile: ${escapeHtml(product.mobile || 'Not provided')}</span>
           </div>
         </button>
       `
@@ -761,18 +806,10 @@ async function openProductDetail(productId) {
   try {
     const product = await apiRequest(`/api/v1/products/${productId}`);
     const sellerName = await getSellerName(product.user_id);
-    let sellerProfile = null;
-    let sellerProfileError = false;
-    try {
-      sellerProfile = await getSellerProfile(product.user_id);
-    } catch {
-      sellerProfileError = true;
-    }
-
-    const sellerPhone = sellerProfile?.mobile?.trim();
+    const sellerPhone = product.mobile?.trim();
     const phoneLink = sellerPhone
       ? `<a class="phone-link" href="tel:${escapeHtml(getTelHref(sellerPhone))}">Call ${escapeHtml(sellerPhone)}</a>`
-      : `<p>${sellerProfileError ? "Unable to load the seller's phone number. Please try again later." : 'The seller has not shared a phone number.'}</p>`;
+      : '<p>The seller has not shared a phone number.</p>';
 
     productDetailContent.innerHTML = `
       <div class="detail-header">
@@ -796,6 +833,7 @@ async function openProductDetail(productId) {
       </div>
       <div class="detail-block">
         <h3>Seller</h3>
+        <p><strong>Name:</strong> ${escapeHtml(product.first_name || 'Not provided')}</p>
         <p><strong>Username:</strong> ${escapeHtml(sellerName)}</p>
         <p><strong>Seller ID:</strong> ${escapeHtml(product.user_id)}</p>
         ${phoneLink}
@@ -934,36 +972,6 @@ async function loadSellerProducts() {
     if (state.sellerProfileUserId === userId) {
       sellerProductsGrid.innerHTML = `<div class="empty-state">${escapeHtml(getErrorMessage(error, 'Unable to load seller listings.'))}</div>`;
     }
-  }
-}
-
-async function loadProducts() {
-  try {
-    const params = new URLSearchParams({
-      page: '1',
-      size: '20',
-      sort_by: state.productSortBy,
-      order_by: state.productSortOrder,
-    });
-    const payload = await apiRequest(`/api/v1/products/products?${params}`);
-    const items = payload.items || [];
-    const enrichedItems = await Promise.all(
-      items.map(async (product) => ({
-        ...product,
-        seller_name: await getSellerName(product.user_id),
-      }))
-    );
-    renderProducts(enrichedItems, productGrid);
-    renderProducts(enrichedItems, shopProductGrid);
-  } catch (error) {
-    const fallback = '<div class="empty-state">Unable to load products right now.</div>';
-    if (productGrid) {
-      productGrid.innerHTML = fallback;
-    }
-    if (shopProductGrid) {
-      shopProductGrid.innerHTML = fallback;
-    }
-    setStatus(productStatus, error.message, 'error');
   }
 }
 
